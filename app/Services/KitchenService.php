@@ -7,104 +7,109 @@ use App\Enums\OrderItemStatus;
 use App\Models\OrderBatch;
 use App\Models\OrderItem;
 use App\Services\InventoryService;
+use App\Services\OrderCalculationService;
 use App\Services\OrderStatusService;
 use Illuminate\Support\Facades\DB;
 
 class KitchenService
 {
-
     public function __construct(
         protected InventoryService $inventoryService,
-        protected OrderStatusService $orderStatusService
+        protected OrderStatusService $orderStatusService,
+        protected OrderCalculationService $calculationService
     ) {}
 
     public function acceptBatch(OrderBatch $batch): OrderBatch
     {
         return DB::transaction(function () use ($batch) {
-
             if ($batch->status !== OrderBatchStatus::Sent) {
                 throw new \DomainException(
                     'Batch belum dikirim ke dapur.'
                 );
             }
 
-
             $batch->update([
                 'status' => OrderBatchStatus::Cooking,
             ]);
-
 
             return $batch->fresh();
         });
     }
 
-
     public function prepareItem(OrderItem $item): OrderItem
     {
         return DB::transaction(function () use ($item) {
-
             if ($item->status !== OrderItemStatus::Waiting) {
                 throw new \DomainException(
                     'Item tidak dapat diproses.'
                 );
             }
 
+            $variant = $item->menuVariant;
+            $recipe = $variant?->recipe()->with('items.ingredient')->first();
+            $itemCogs = 0;
 
-            $ingredient = $item->menuVariant
-                ->mainIngredient;
-
-            if ($ingredient) {
-
-                $this->inventoryService
-                    ->deductStock(
-                        $ingredient,
-                        $item->quantity,
+            if ($recipe && $recipe->items->isNotEmpty()) {
+                // Deduct based on recipe items
+                foreach ($recipe->items as $recipeItem) {
+                    $deductQty = (float) $recipeItem->quantity * (float) $item->quantity;
+                    $deduction = $this->inventoryService->deductStock(
+                        $recipeItem->ingredient,
+                        $deductQty,
                         $item
                     );
+                    $itemCogs += $deduction['cost'];
+                }
+            } elseif ($variant?->mainIngredient) {
+                // Deduct based on main ingredient and conversion rate
+                $deductQty = (float) ($item->inventory_quantity > 0 ? $item->inventory_quantity : $item->quantity);
+                $deduction = $this->inventoryService->deductStock(
+                    $variant->mainIngredient,
+                    $deductQty,
+                    $item
+                );
+                $itemCogs += $deduction['cost'];
             }
+
+            $grossProfit = round((float) $item->subtotal - $itemCogs, 2);
 
             $item->update([
                 'status' => OrderItemStatus::Preparing,
+                'cogs' => round($itemCogs, 2),
+                'gross_profit' => $grossProfit,
             ]);
 
+            $order = $item->orderBatch?->order ?? $item->order;
+            if ($order) {
+                $this->calculationService->recalculate($order);
+                $this->orderStatusService->sync($order);
+            }
 
-            $this->orderStatusService
-                ->sync($item->order);
-
-
-            $this->syncBatchStatus(
-                $item->orderBatch
-            );
-
+            $this->syncBatchStatus($item->orderBatch);
 
             return $item->fresh();
         });
     }
 
-
     public function readyItem(OrderItem $item): OrderItem
     {
         return DB::transaction(function () use ($item) {
-
             if ($item->status !== OrderItemStatus::Preparing) {
                 throw new \DomainException(
                     'Item belum dalam proses memasak.'
                 );
             }
 
-
             $item->update([
                 'status' => OrderItemStatus::Ready,
             ]);
 
-            $this->orderStatusService
-                ->sync($item->order);
+            $order = $item->orderBatch?->order ?? $item->order;
+            if ($order) {
+                $this->orderStatusService->sync($order);
+            }
 
-
-            $this->syncBatchStatus(
-                $item->orderBatch
-            );
-
+            $this->syncBatchStatus($item->orderBatch);
 
             return $item->fresh();
         });
@@ -113,7 +118,6 @@ class KitchenService
     private function syncBatchStatus(OrderBatch $batch): void
     {
         $items = $batch->items;
-
 
         if (
             $items->every(
@@ -127,7 +131,6 @@ class KitchenService
                 )
             )
         ) {
-
             $batch->update([
                 'status' => OrderBatchStatus::Ready,
             ]);
@@ -135,14 +138,12 @@ class KitchenService
             return;
         }
 
-
         if (
             $items->contains(
                 fn($item) =>
                 $item->status === OrderItemStatus::Preparing
             )
         ) {
-
             $batch->update([
                 'status' => OrderBatchStatus::Cooking,
             ]);
@@ -152,27 +153,22 @@ class KitchenService
     public function serveItem(OrderItem $item): OrderItem
     {
         return DB::transaction(function () use ($item) {
-
             if ($item->status !== OrderItemStatus::Ready) {
                 throw new \DomainException(
                     'Item belum siap disajikan.'
                 );
             }
 
-
             $item->update([
                 'status' => OrderItemStatus::Served,
             ]);
 
+            $order = $item->orderBatch?->order ?? $item->order;
+            if ($order) {
+                $this->orderStatusService->sync($order);
+            }
 
-            $this->orderStatusService
-                ->sync($item->order);
-
-
-            $this->syncBatchStatus(
-                $item->orderBatch
-            );
-
+            $this->syncBatchStatus($item->orderBatch);
 
             return $item->fresh();
         });

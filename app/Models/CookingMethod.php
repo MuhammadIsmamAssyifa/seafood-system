@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,19 +12,18 @@ class CookingMethod extends Model
 {
     use HasFactory;
 
-
     protected $fillable = [
         'outlet_id',
         'name',
         'status',
     ];
 
-
     protected function casts(): array
     {
-        return [];
+        return [
+            'status' => ActiveStatus::class,
+        ];
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -31,12 +31,10 @@ class CookingMethod extends Model
     |--------------------------------------------------------------------------
     */
 
-
     public function outlet(): BelongsTo
     {
         return $this->belongsTo(Outlet::class);
     }
-
 
     public function menuVariants(): HasMany
     {

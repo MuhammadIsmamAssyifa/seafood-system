@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ActiveStatus;
+use App\Enums\MenuType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,28 +13,26 @@ class Menu extends Model
 {
     use HasFactory;
 
-
     protected $fillable = [
         'outlet_id',
-        'category_id',
         'name',
-        'description',
+        'type',
         'status',
     ];
 
-
     protected function casts(): array
     {
-        return [];
+        return [
+            'type' => MenuType::class,
+            'status' => ActiveStatus::class,
+        ];
     }
-
 
     /*
     |--------------------------------------------------------------------------
     | Relationships
     |--------------------------------------------------------------------------
     */
-
 
     public function outlet(): BelongsTo
     {

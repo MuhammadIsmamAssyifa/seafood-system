@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use App\Enums\ActiveStatus;
+use App\Enums\IngredientUnit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Enums\IngredientStatus;
 
 class Ingredient extends Model
 {
     use HasFactory;
-
 
     protected $fillable = [
         'outlet_id',
@@ -21,12 +21,13 @@ class Ingredient extends Model
         'status',
     ];
 
-
     protected function casts(): array
     {
-        return ['status' => IngredientStatus::class,];
+        return [
+            'unit' => IngredientUnit::class,
+            'status' => ActiveStatus::class,
+        ];
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -36,17 +37,13 @@ class Ingredient extends Model
 
     public function stockMovements(): HasMany
     {
-        return $this->hasMany(
-            StockMovement::class
-        );
+        return $this->hasMany(StockMovement::class);
     }
-
 
     public function outlet(): BelongsTo
     {
         return $this->belongsTo(Outlet::class);
     }
-
 
     public function menuVariants(): HasMany
     {
@@ -55,8 +52,6 @@ class Ingredient extends Model
 
     public function inventoryBatches(): HasMany
     {
-        return $this->hasMany(
-            InventoryBatch::class
-        );
+        return $this->hasMany(InventoryBatch::class);
     }
 }

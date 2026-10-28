@@ -10,27 +10,22 @@ use Illuminate\Support\Facades\DB;
 
 class OrderStatusService
 {
-    public function sync(Order $order): Order
+    public function sync(Order $order, ?int $changedBy = null): Order
     {
-        return DB::transaction(function () use ($order) {
+        return DB::transaction(function () use ($order, $changedBy) {
 
-            $items = $order->items()
-                ->get();
-
+            $items = $order->items()->get();
 
             if ($items->isEmpty()) {
                 return $order;
             }
 
-
             $newStatus = match (true) {
-
                 $items->every(
                     fn($item) =>
                     $item->status === OrderItemStatus::Served
                 )
                 => OrderStatus::Completed,
-
 
                 $items->every(
                     fn($item) =>
@@ -44,7 +39,6 @@ class OrderStatusService
                 )
                 => OrderStatus::Ready,
 
-
                 $items->contains(
                     fn($item) =>
                     in_array(
@@ -57,26 +51,24 @@ class OrderStatusService
                 )
                 => OrderStatus::Preparing,
 
-
                 default
                 => $order->status,
             };
 
-
             if ($order->status !== $newStatus) {
+                $oldStatus = $order->status;
 
                 $order->update([
                     'status' => $newStatus,
                 ]);
 
-
                 OrderStatusHistory::create([
                     'order_id' => $order->id,
+                    'from_status' => $oldStatus,
                     'status' => $newStatus,
-                    'changed_by' => auth()->id(),
+                    'changed_by' => $changedBy ?? auth()->id() ?? $order->created_by,
                 ]);
             }
-
 
             return $order->fresh();
         });

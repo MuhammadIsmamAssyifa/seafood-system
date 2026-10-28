@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Enums\OrderStatus;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Order extends Model
 {
     use HasFactory;
-
 
     protected $fillable = [
         'outlet_id',
@@ -23,9 +23,10 @@ class Order extends Model
         'subtotal',
         'discount',
         'grand_total',
+        'total_cogs',
+        'gross_profit',
         'created_by',
     ];
-
 
     protected function casts(): array
     {
@@ -33,18 +34,18 @@ class Order extends Model
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
             'grand_total' => 'decimal:2',
+            'total_cogs' => 'decimal:2',
+            'gross_profit' => 'decimal:2',
             'guest_count' => 'integer',
             'status' => OrderStatus::class,
         ];
     }
-
 
     /*
     |--------------------------------------------------------------------------
     | Relationships
     |--------------------------------------------------------------------------
     */
-
 
     /**
      * Order belongs to outlet
@@ -54,7 +55,6 @@ class Order extends Model
         return $this->belongsTo(Outlet::class);
     }
 
-
     /**
      * Order belongs to table
      */
@@ -62,7 +62,6 @@ class Order extends Model
     {
         return $this->belongsTo(OrderTable::class);
     }
-
 
     /**
      * User who created the order
@@ -72,7 +71,6 @@ class Order extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-
     /**
      * Order batches
      */
@@ -81,6 +79,13 @@ class Order extends Model
         return $this->hasMany(OrderBatch::class);
     }
 
+    /**
+     * Order items through batches
+     */
+    public function items(): HasManyThrough
+    {
+        return $this->hasManyThrough(OrderItem::class, OrderBatch::class);
+    }
 
     /**
      * Order status histories
@@ -89,7 +94,6 @@ class Order extends Model
     {
         return $this->hasMany(OrderStatusHistory::class);
     }
-
 
     /**
      * Payments

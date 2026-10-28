@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TableStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,19 +12,18 @@ class OrderTable extends Model
 {
     use HasFactory;
 
-
     protected $fillable = [
         'outlet_id',
-        'table_number',
+        'number',
         'status',
     ];
 
-
     protected function casts(): array
     {
-        return [];
+        return [
+            'status' => TableStatus::class,
+        ];
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -31,12 +31,10 @@ class OrderTable extends Model
     |--------------------------------------------------------------------------
     */
 
-
     public function outlet(): BelongsTo
     {
         return $this->belongsTo(Outlet::class);
     }
-
 
     public function orders(): HasMany
     {

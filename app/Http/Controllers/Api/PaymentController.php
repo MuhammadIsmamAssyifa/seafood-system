@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Payment\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Order;
-use App\Enums\PaymentStatus;
 use App\Services\PaymentService;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class PaymentController extends Controller
 {
@@ -15,51 +15,22 @@ class PaymentController extends Controller
         protected PaymentService $paymentService
     ) {}
 
-
     public function store(
-        Request $request,
+        StorePaymentRequest $request,
         Order $order
-    ) {
-
-        $payment = $this->paymentService
-            ->createPayment(
-                $order,
-                $request->validate([
-                    'method' => [
-                        'required',
-                        'string',
-                    ],
-
-                    'amount' => [
-                        'required',
-                        'numeric',
-                        'min:1',
-                    ],
-                ])
-            );
-
+    ): PaymentResource {
+        $payment = $this->paymentService->createPayment(
+            $order,
+            $request->validated()
+        );
 
         return new PaymentResource($payment);
     }
 
-    public function summary(Order $order)
+    public function summary(Order $order): JsonResponse
     {
-        $paid = $order->payments()
-            ->where('status', PaymentStatus::Paid)
-            ->sum('amount');
-
-
         return response()->json([
-            'order_id' => $order->id,
-
-            'grand_total' => $order->grand_total,
-
-            'paid' => $paid,
-
-            'remaining' => max(
-                0,
-                $order->grand_total - $paid
-            ),
+            'data' => $this->paymentService->getSummary($order),
         ]);
     }
 }

@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\DB;
 class OrderItemChangeService
 {
     public function __construct(
-        protected OrderCalculationService $calculationService
+        protected OrderCalculationService $calculationService,
+        protected AuditLogService $auditLogService
     ) {}
 
     /**
@@ -67,11 +68,11 @@ class OrderItemChangeService
 
 
                 'new_quantity' =>
-                $data['quantity'] ?? null,
+                $data['quantity'] ?? $item->quantity,
 
 
                 'new_price' =>
-                $data['price'] ?? null,
+                $data['price'] ?? $item->price_snapshot,
 
 
                 'reason' =>
@@ -79,7 +80,7 @@ class OrderItemChangeService
 
 
                 'status' =>
-                OrderItemChangeStatus::Pending,
+                OrderItemChangeStatus::PendingCustomer,
 
 
                 'created_by' =>
@@ -103,7 +104,7 @@ class OrderItemChangeService
 
             if (
                 $change->status !==
-                OrderItemChangeStatus::Pending
+                OrderItemChangeStatus::PendingCustomer
             ) {
 
                 throw new \DomainException(
@@ -121,26 +122,14 @@ class OrderItemChangeService
 
                 case OrderItemChangeType::QuantityChange:
 
+                    $price = $change->new_price ?? $item->price_snapshot;
+                    $quantity = $change->new_quantity ?? $item->quantity;
 
                     $item->update([
-
-                        'quantity' =>
-                        $change->new_quantity,
-
-
-                        'confirmed_quantity' =>
-                        $change->new_quantity,
-
-
-                        'price_snapshot' =>
-                        $change->new_price,
-
-
-                        'subtotal' =>
-                        $change->new_quantity
-                            *
-                            $change->new_price,
-
+                        'quantity' => $quantity,
+                        'confirmed_quantity' => $quantity,
+                        'price_snapshot' => $price,
+                        'subtotal' => $quantity * $price,
                     ]);
 
                     break;
@@ -178,16 +167,16 @@ class OrderItemChangeService
 
 
             $change->update([
-
                 'status' =>
                 OrderItemChangeStatus::Approved
-
             ]);
 
-            $this->calculationService
-                ->recalculate(
-                    $item->order
-                );
+            $this->auditLogService->logPriceChange($change->fresh());
+
+            $order = $item->orderBatch?->order ?? $item->order;
+            if ($order) {
+                $this->calculationService->recalculate($order);
+            }
 
 
 
@@ -379,10 +368,10 @@ class OrderItemChangeService
 
 
 
-            $this->calculationService
-                ->recalculate(
-                    $oldItem->order
-                );
+            $order = $oldItem->orderBatch?->order ?? $oldItem->order;
+            if ($order) {
+                $this->calculationService->recalculate($order);
+            }
 
 
             return $newItem;

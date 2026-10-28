@@ -3,94 +3,60 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\StaffLoginRequest;
+use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Services\AuditLogService;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function __construct(
+        protected AuditLogService $auditLogService
+    ) {}
+
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
+        $credentials = $request->validated();
 
-        $user = \App\Models\User::where(
-            'email',
-            $request->email
-        )->first();
+        $user = User::where('email', $credentials['email'])->first();
 
-        if (
-            !$user ||
-            !Hash::check(
-                $request->password,
-                $user->password
-            )
-        ) {
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
             return response()->json([
-                'message' => 'Invalid credential'
+                'message' => 'Invalid credential',
             ], 401);
         }
-        $token = $user
-            ->createToken('api-token')
-            ->plainTextToken;
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        $this->auditLogService->logLogin($user, 'Web/Owner/Admin');
 
         return response()->json([
             'token' => $token,
-
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'roles' => $user->getRoleNames()
-            ]
+            'user' => new UserResource($user),
         ]);
     }
 
-    public function staffLogin(Request $request)
+    public function staffLogin(StaffLoginRequest $request)
     {
+        $credentials = $request->validated();
 
-        $request->validate([
-            'username' => 'required',
-            'pin' => 'required'
-        ]);
+        $user = User::where('username', $credentials['username'])->first();
 
-
-        $user = \App\Models\User::where(
-            'username',
-            $request->username
-        )->first();
-
-
-        if (
-            !$user ||
-            !Hash::check(
-                $request->pin,
-                $user->pin_hash
-            )
-        ) {
-
+        if (!$user || !Hash::check($credentials['pin'], $user->pin_hash)) {
             return response()->json([
-                'message' => 'Invalid credential'
+                'message' => 'Invalid credential',
             ], 401);
         }
 
+        $token = $user->createToken('staff-token')->plainTextToken;
 
-        $token = $user
-            ->createToken('staff-token')
-            ->plainTextToken;
-
+        $this->auditLogService->logLogin($user, 'POS Staff PIN');
 
         return response()->json([
-
             'token' => $token,
-
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'roles' => $user->getRoleNames()
-            ]
-
+            'user' => new UserResource($user),
         ]);
     }
 }

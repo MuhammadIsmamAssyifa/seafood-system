@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Enums\PaymentStatus;
-use App\Enums\PaymentMethod;
 
 class Payment extends Model
 {
     use HasFactory;
-
 
     protected $fillable = [
         'order_id',
@@ -21,7 +20,6 @@ class Payment extends Model
         'paid_at',
         'created_by',
     ];
-
 
     protected function casts(): array
     {
@@ -33,22 +31,27 @@ class Payment extends Model
         ];
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Relationships
     |--------------------------------------------------------------------------
     */
 
-
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
+    /**
+     * Alias for createdBy
+     */
     public function receivedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'received_by');
+        return $this->createdBy();
     }
 }

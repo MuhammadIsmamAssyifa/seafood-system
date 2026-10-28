@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderBatchResource;
 use App\Models\OrderBatch;
 use App\Services\OrderBatchService;
 
@@ -12,16 +13,11 @@ class OrderBatchController extends Controller
         protected OrderBatchService $orderBatchService
     ) {}
 
-
-    public function submit(OrderBatch $orderBatch)
+    public function submit(OrderBatch $orderBatch): OrderBatchResource
     {
-        $batch = $this->orderBatchService
-            ->submit($orderBatch);
+        $batch = $this->orderBatchService->submit($orderBatch);
 
-
-        return response()->json([
-            'message' => 'Pesanan berhasil dikirim ke dapur.',
-            'data' => $batch,
-        ]);
+        return (new OrderBatchResource($batch->load(['items', 'order'])))
+            ->additional(['message' => 'Pesanan berhasil dikirim ke dapur.']);
     }
 }

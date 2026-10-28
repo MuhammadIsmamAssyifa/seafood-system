@@ -11,58 +11,45 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryService
 {
-
+    public function __construct(
+        protected AuditLogService $auditLogService
+    ) {}
     public function addStock(array $data): InventoryBatch
     {
         return DB::transaction(function () use ($data) {
+            $totalCost = round($data['quantity'] * $data['cost_per_unit'], 2);
 
             $batch = InventoryBatch::create([
-
                 'outlet_id' => $data['outlet_id'],
-
                 'ingredient_id' => $data['ingredient_id'],
-
                 'quantity' => $data['quantity'],
-
                 'remaining_quantity' => $data['quantity'],
-
                 'cost_per_unit' => $data['cost_per_unit'],
-
                 'source' => $data['source'] ?? null,
-
-                'received_at' => now(),
-
+                'received_at' => $data['received_at'] ?? now(),
             ]);
 
-
-
-            StockMovement::create([
-
+            $movement = StockMovement::create([
                 'outlet_id' => $data['outlet_id'],
-
                 'ingredient_id' => $data['ingredient_id'],
-
                 'inventory_batch_id' => $batch->id,
-
                 'type' => StockMovementType::In,
-
                 'quantity' => $data['quantity'],
-
-                'created_by' => auth()->id(),
-
+                'cost_per_unit' => $data['cost_per_unit'],
+                'total_cost' => $totalCost,
+                'created_by' => auth()->id() ?? $data['created_by'] ?? \App\Models\User::first()?->id,
                 'note' => $data['note'] ?? null,
-
             ]);
 
+            $this->auditLogService?->logInventoryAdjustment($movement, $data['note'] ?? 'Penambahan stok');
 
             return $batch;
         });
     }
 
-    public function getAvailableStock(
-        int $ingredientId
-    ): float {
-        return InventoryBatch::where('ingredient_id', $ingredientId)
+    public function getAvailableStock(int $ingredientId): float
+    {
+        return (float) InventoryBatch::where('ingredient_id', $ingredientId)
             ->sum('remaining_quantity');
     }
 
@@ -71,18 +58,17 @@ class InventoryService
         float $quantity,
         ?Model $reference = null
     ): array {
-
         return DB::transaction(function () use (
             $ingredient,
             $quantity,
             $reference
         ) {
-
             $available = $this->getAvailableStock($ingredient->id);
 
             if ($available < $quantity) {
+                $unit = $ingredient->unit instanceof \BackedEnum ? $ingredient->unit->value : $ingredient->unit;
                 throw new \DomainException(
-                    "Stok {$ingredient->name} tidak mencukupi. Dibutuhkan {$quantity} {$ingredient->unit}, tersedia {$available} {$ingredient->unit}."
+                    "Stok {$ingredient->name} tidak mencukupi. Dibutuhkan {$quantity} {$unit}, tersedia {$available} {$unit}."
                 );
             }
 
@@ -94,76 +80,51 @@ class InventoryService
                 ->get();
 
             $remaining = $quantity;
-
             $totalCost = 0;
-
             $movements = [];
 
             foreach ($batches as $batch) {
-
                 if ($remaining <= 0) {
                     break;
                 }
 
                 $deduct = min(
-                    $batch->remaining_quantity,
+                    (float) $batch->remaining_quantity,
                     $remaining
                 );
 
-                $batch->decrement(
-                    'remaining_quantity',
-                    $deduct
-                );
+                $batch->decrement('remaining_quantity', $deduct);
 
-                $cost = $deduct * $batch->cost_per_unit;
-
+                $cost = round($deduct * (float) $batch->cost_per_unit, 2);
                 $totalCost += $cost;
 
                 StockMovement::create([
-
                     'outlet_id' => $batch->outlet_id,
-
                     'ingredient_id' => $ingredient->id,
-
                     'inventory_batch_id' => $batch->id,
-
                     'type' => StockMovementType::Sale,
-
                     'quantity' => $deduct,
-
-                    'reference_type' => $reference
-                        ? get_class($reference)
-                        : null,
-
+                    'cost_per_unit' => $batch->cost_per_unit,
+                    'total_cost' => $cost,
+                    'reference_type' => $reference ? get_class($reference) : null,
                     'reference_id' => $reference?->id,
-
-                    'created_by' => auth()->id(),
-
+                    'created_by' => auth()->id() ?? ($reference instanceof \App\Models\OrderItem ? $reference->orderBatch?->order?->created_by : null) ?? \App\Models\User::first()?->id,
                 ]);
 
                 $movements[] = [
-
                     'batch_id' => $batch->id,
-
                     'quantity' => $deduct,
-
-                    'cost_per_unit' => $batch->cost_per_unit,
-
+                    'cost_per_unit' => (float) $batch->cost_per_unit,
                     'cost' => $cost,
-
                 ];
 
                 $remaining -= $deduct;
             }
 
             return [
-
                 'quantity' => $quantity,
-
-                'cost' => $totalCost,
-
+                'cost' => round($totalCost, 2),
                 'movements' => $movements,
-
             ];
         });
     }

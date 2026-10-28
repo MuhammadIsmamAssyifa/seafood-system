@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\IngredientUnit;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class RecipeItem extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'recipe_id',
+        'ingredient_id',
+        'quantity',
+        'unit',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'decimal:3',
+            'unit' => IngredientUnit::class,
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function recipe(): BelongsTo
+    {
+        return $this->belongsTo(Recipe::class);
+    }
+
+    public function ingredient(): BelongsTo
+    {
+        return $this->belongsTo(Ingredient::class);
+    }
+}
+

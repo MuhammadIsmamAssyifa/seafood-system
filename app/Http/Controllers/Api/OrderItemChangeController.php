@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OrderItemChange\ReplaceOrderItemRequest;
+use App\Http\Requests\OrderItemChange\StoreOrderItemChangeRequest;
+use App\Http\Resources\OrderItemChangeResource;
+use App\Http\Resources\OrderItemResource;
 use App\Models\OrderItem;
 use App\Models\OrderItemChange;
 use App\Services\OrderItemChangeService;
-use Illuminate\Http\Request;
 
 class OrderItemChangeController extends Controller
 {
@@ -14,135 +17,56 @@ class OrderItemChangeController extends Controller
         protected OrderItemChangeService $changeService
     ) {}
 
-
     /**
      * Membuat request perubahan item
      */
     public function store(
-        Request $request,
+        StoreOrderItemChangeRequest $request,
         OrderItem $orderItem
-    ) {
+    ): OrderItemChangeResource {
+        $change = $this->changeService->create(
+            $orderItem,
+            $request->validated()
+        );
 
-        $change = $this->changeService
-            ->create(
-                $orderItem,
-                $request->validate([
-
-                    'type' => [
-                        'required',
-                        'string',
-                    ],
-
-
-                    'quantity' => [
-                        'nullable',
-                        'numeric',
-                        'min:0.001',
-                    ],
-
-
-                    'price' => [
-                        'nullable',
-                        'numeric',
-                        'min:0',
-                    ],
-
-
-                    'reason' => [
-                        'required',
-                        'string',
-                    ],
-
-                ])
-            );
-
-
-        return response()->json([
-            'message' => 'Perubahan order berhasil dibuat.',
-            'data' => $change,
-        ]);
+        return (new OrderItemChangeResource($change))
+            ->additional(['message' => 'Perubahan order berhasil dibuat.']);
     }
-
-
 
     /**
      * Customer approve
      */
     public function approve(
         OrderItemChange $change
-    ) {
+    ): OrderItemChangeResource {
+        $result = $this->changeService->approve($change);
 
-        $result = $this->changeService
-            ->approve($change);
-
-
-        return response()->json([
-            'message' =>
-            'Perubahan order disetujui.',
-
-            'data' =>
-            $result,
-        ]);
+        return (new OrderItemChangeResource($result))
+            ->additional(['message' => 'Perubahan order disetujui.']);
     }
-
-
 
     /**
      * Customer reject
      */
     public function reject(
         OrderItemChange $change
-    ) {
+    ): OrderItemChangeResource {
+        $result = $this->changeService->reject($change);
 
-        $result = $this->changeService
-            ->reject($change);
-
-
-        return response()->json([
-            'message' =>
-            'Perubahan order ditolak.',
-
-            'data' =>
-            $result,
-        ]);
+        return (new OrderItemChangeResource($result))
+            ->additional(['message' => 'Perubahan order ditolak.']);
     }
 
     public function replace(
-        Request $request,
+        ReplaceOrderItemRequest $request,
         OrderItem $orderItem
-    ) {
+    ): OrderItemResource {
+        $item = $this->changeService->replace(
+            $orderItem,
+            $request->validated()
+        );
 
-        $item = $this->changeService
-            ->replace(
-                $orderItem,
-                $request->validate([
-
-                    'menu_variant_id' => [
-                        'required',
-                        'exists:menu_variants,id',
-                    ],
-
-                    'quantity' => [
-                        'required',
-                        'numeric',
-                        'min:0.001',
-                    ],
-
-                    'reason' => [
-                        'required',
-                        'string',
-                    ],
-
-                ])
-            );
-
-
-        return response()->json([
-            'message' =>
-            'Item berhasil diganti.',
-
-            'data' =>
-            $item,
-        ]);
+        return (new OrderItemResource($item))
+            ->additional(['message' => 'Item berhasil diganti.']);
     }
 }

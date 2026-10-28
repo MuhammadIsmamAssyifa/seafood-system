@@ -3,49 +3,43 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderBatchResource;
+use App\Http\Resources\OrderItemResource;
 use App\Models\OrderBatch;
 use App\Models\OrderItem;
 use App\Services\KitchenService;
 
 class KitchenActionController extends Controller
 {
-
     public function __construct(
         protected KitchenService $kitchenService
     ) {}
 
-
-    public function acceptBatch(OrderBatch $batch)
+    public function acceptBatch(OrderBatch $batch): OrderBatchResource
     {
-        return response()->json(
-            $this->kitchenService
-                ->acceptBatch($batch)
-        );
+        $updatedBatch = $this->kitchenService->acceptBatch($batch);
+
+        return new OrderBatchResource($updatedBatch->load(['items', 'order']));
     }
 
-
-    public function prepareItem(OrderItem $item)
+    public function prepareItem(OrderItem $item): OrderItemResource
     {
-        return response()->json(
-            $this->kitchenService
-                ->prepareItem($item)
-        );
+        $updatedItem = $this->kitchenService->prepareItem($item);
+
+        return new OrderItemResource($updatedItem);
     }
 
-
-    public function readyItem(OrderItem $item)
+    public function readyItem(OrderItem $item): OrderItemResource
     {
-        return response()->json(
-            $this->kitchenService
-                ->readyItem($item)
-        );
+        $updatedItem = $this->kitchenService->readyItem($item);
+
+        return new OrderItemResource($updatedItem);
     }
 
-    public function serveItem(OrderItem $item)
+    public function serveItem(OrderItem $item): OrderItemResource
     {
-        return response()->json(
-            $this->kitchenService
-                ->serveItem($item)
-        );
+        $updatedItem = $this->kitchenService->serveItem($item);
+
+        return new OrderItemResource($updatedItem);
     }
 }

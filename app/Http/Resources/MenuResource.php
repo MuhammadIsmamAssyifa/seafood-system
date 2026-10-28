@@ -43,7 +43,7 @@ class MenuResource extends JsonResource
 
 
                         'ingredient' => $variant
-                            ->ingredient?->name,
+                            ->mainIngredient?->name,
 
 
                         'station' => $variant

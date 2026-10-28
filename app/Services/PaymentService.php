@@ -11,14 +11,15 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
+    public function __construct(
+        protected AuditLogService $auditLogService
+    ) {}
+
     public function createPayment(
         Order $order,
         array $data
     ): Payment {
-
         return DB::transaction(function () use ($order, $data) {
-
-
             if ($order->status === OrderStatus::Completed) {
                 throw new \DomainException(
                     'Order sudah selesai.'
@@ -31,9 +32,7 @@ class PaymentService
                 ->where('status', PaymentStatus::Paid)
                 ->sum('amount');
 
-
             $remaining = $order->grand_total - $paidAmount;
-
 
             if ($data['amount'] > $remaining) {
                 throw new \DomainException(
@@ -41,29 +40,38 @@ class PaymentService
                 );
             }
 
-
             $payment = Payment::create([
                 'order_id' => $order->id,
-
                 'method' => $data['method'],
-
                 'status' => PaymentStatus::Paid,
-
                 'amount' => $data['amount'],
-
                 'created_by' => auth()->id(),
-
                 'paid_at' => now(),
             ]);
 
-
             $this->checkOrderPaid($order);
 
+            $this->auditLogService->logPayment($payment);
 
             return $payment;
         });
     }
 
+    public function getSummary(Order $order): array
+    {
+        $paid = (float) $order->payments()
+            ->where('status', PaymentStatus::Paid)
+            ->sum('amount');
+
+        $grandTotal = (float) $order->grand_total;
+
+        return [
+            'order_id' => $order->id,
+            'grand_total' => $grandTotal,
+            'paid' => $paid,
+            'remaining' => max(0, round($grandTotal - $paid, 2)),
+        ];
+    }
 
     private function checkOrderPaid(Order $order): void
     {
@@ -71,9 +79,7 @@ class PaymentService
             ->where('status', PaymentStatus::Paid)
             ->sum('amount');
 
-
         if ($paidAmount >= $order->grand_total) {
-
             $order->update([
                 'status' => OrderStatus::Completed,
             ]);
@@ -88,7 +94,6 @@ class PaymentService
                 OrderBatchStatus::Completed,
             ])
             ->exists();
-
 
         if ($unfinishedBatch) {
             throw new \DomainException(
