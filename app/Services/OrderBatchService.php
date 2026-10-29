@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\OrderBatchStatus;
 use App\Enums\OrderStatus;
+use App\Events\KdsBatchSubmitted;
 use App\Models\OrderBatch;
 use App\Models\OrderStatusHistory;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +55,10 @@ class OrderBatchService
                 ]);
             }
 
-            return $batch->fresh();
+            $freshBatch = $batch->fresh();
+            event(new KdsBatchSubmitted($freshBatch));
+
+            return $freshBatch;
         });
     }
 }

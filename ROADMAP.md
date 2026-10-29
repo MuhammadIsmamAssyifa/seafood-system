@@ -443,42 +443,43 @@ Status: ? Selesai
 Suite analitik dan laporan lengkap untuk owner dan manajemen restoran:
 
 1. **Dashboard Summary (GET /api/v1/dashboard/summary)**:
-   - Omzet penjualan hari ini, HPP, laba kotor, dan margin keuntungan (%)
-   - Metrik order: total pesanan hari ini, pesanan selesai, pesanan aktif yang sedang diproses di dapur/meja, dan jumlah tamu
-   - Okupansi meja: total meja, meja terisi (occupied), meja kosong, persentase keterisian meja (%)
-   - Peringatan stok menipis (low stock alert) secara otomatis jika sisa stok bahan baku <= 5 kg/unit
-   - Daftar 5 pesanan terbaru (recent orders) dengan nomor pesanan, meja, status, dan nominal
+    - Omzet penjualan hari ini, HPP, laba kotor, dan margin keuntungan (%)
+    - Metrik order: total pesanan hari ini, pesanan selesai, pesanan aktif yang sedang diproses di dapur/meja, dan jumlah tamu
+    - Okupansi meja: total meja, meja terisi (occupied), meja kosong, persentase keterisian meja (%)
+    - Peringatan stok menipis (low stock alert) secara otomatis jika sisa stok bahan baku <= 5 kg/unit
+    - Daftar 5 pesanan terbaru (recent orders) dengan nomor pesanan, meja, status, dan nominal
 
 2. **Sales Report (GET /api/v1/reports/sales)**:
-   - Filter rentang tanggal (start_date, end_date)
-   - Ringkasan omzet kotor (gross sales), total diskon, omzet bersih (net sales), total pesanan, total tamu
-   - Rata-rata nilai transaksi (AOV - Average Order Value) dan rata-rata belanja per tamu
-   - Tren harian (daily trend breakdown) omzet dan volume order
+    - Filter rentang tanggal (start_date, end_date)
+    - Ringkasan omzet kotor (gross sales), total diskon, omzet bersih (net sales), total pesanan, total tamu
+    - Rata-rata nilai transaksi (AOV - Average Order Value) dan rata-rata belanja per tamu
+    - Tren harian (daily trend breakdown) omzet dan volume order
 
 3. **Profit & COGS Report (GET /api/v1/reports/profit/summary & /reports/orders/{order}/profit)**:
-   - Analisis laba riil berbasis FIFO modal bahan baku
-   - Laba kotor per order maupun ringkasan seluruh outlet
+    - Analisis laba riil berbasis FIFO modal bahan baku
+    - Laba kotor per order maupun ringkasan seluruh outlet
 
 4. **Payment Report (GET /api/v1/reports/payments)**:
-   - Total uang terkumpul dan total frekuensi transaksi
-   - Rincian per metode pembayaran (Cash, Transfer, dll) beserta nominal dan persentase kontribusi
-   - Riwayat transaksi pembayaran lengkap dengan nama kasir yang menerima pembayaran
+    - Total uang terkumpul dan total frekuensi transaksi
+    - Rincian per metode pembayaran (Cash, Transfer, dll) beserta nominal dan persentase kontribusi
+    - Riwayat transaksi pembayaran lengkap dengan nama kasir yang menerima pembayaran
 
 5. **Menu Sales Report (GET /api/v1/reports/menu-sales)**:
-   - Peringkat menu terlaris (Best Seller) berdasarkan omzet dan kuantitas porsi/kg terjual
-   - Analisis kontribusi penjualan menu terhadap total omzet (% revenue share)
-   - Laba kotor dan margin keuntungan per menu varian
+    - Peringkat menu terlaris (Best Seller) berdasarkan omzet dan kuantitas porsi/kg terjual
+    - Analisis kontribusi penjualan menu terhadap total omzet (% revenue share)
+    - Laba kotor dan margin keuntungan per menu varian
 
 6. **Inventory & Stock Report (GET /api/v1/reports/inventory & /reports/stock-movements)**:
-   - Laporan stok terkini seluruh bahan baku dengan total valuasi rupiah aset inventori
-   - Riwayat mutasi stok lengkap (masuk, penjualan dapur, waste, adjustment) dengan jejak batch FIFO dan pencatat
+    - Laporan stok terkini seluruh bahan baku dengan total valuasi rupiah aset inventori
+    - Riwayat mutasi stok lengkap (masuk, penjualan dapur, waste, adjustment) dengan jejak batch FIFO dan pencatat
 
-Seluruh response endpoint telah distandarisasi menggunakan API Resource dan diproteksi middleware Spatie Permission (dashboard.view & 
+Seluruh response endpoint telah distandarisasi menggunakan API Resource dan diproteksi middleware Spatie Permission (dashboard.view &
 eport.view).
 
 Target tercapai: Owner dan manajemen dapat melihat seluruh kondisi operasional, keuangan, stok, dan performa restoran secara komprehensif.
 
 ---
+
 ## Phase 2
 
 ### Inventory Batch Cost
@@ -486,19 +487,21 @@ Target tercapai: Owner dan manajemen dapat melihat seluruh kondisi operasional, 
 Status: ? Selesai
 
 Menghitung:
+
 - **COGS (Cost of Goods Sold)**: Perhitungan HPP otomatis saat item pesanan diproses di dapur (Preparing)
-- **FIFO Cost**: Deduct stok bahan baku secara FIFO dari inventory_batches, mencatat cost_per_unit dan 	otal_cost di stock_movements
+- **FIFO Cost**: Deduct stok bahan baku secara FIFO dari inventory_batches, mencatat cost_per_unit dan otal_cost di stock_movements
 - **Actual Profit & Margin**:
-  - Per item: gross_profit = subtotal - cogs
-  - Per order: gross_profit = subtotal - total_cogs - discount
-  - Profit margin percentage: (gross_profit / revenue) * 100
+    - Per item: gross_profit = subtotal - cogs
+    - Per order: gross_profit = subtotal - total_cogs - discount
+    - Profit margin percentage: (gross_profit / revenue) \* 100
 - **Endpoints & Reporting**:
-  - GET /api/v1/reports/orders/{order}/profit (laporan profit per order & rincian item)
-  - GET /api/v1/reports/profit/summary (laporan agregat profit outlet per periode tanggal & breakdown menu)
+    - GET /api/v1/reports/orders/{order}/profit (laporan profit per order & rincian item)
+    - GET /api/v1/reports/profit/summary (laporan agregat profit outlet per periode tanggal & breakdown menu)
 
 Target tercapai: Laporan profit restoran seafood kini akurat secara riil berdasarkan harga modal beli bahan baku.
 
 ---
+
 ## Phase 3
 
 ### Authorization
@@ -508,24 +511,27 @@ Status: ? Selesai
 Implementasi penuh Role & Permission berbasis Spatie Laravel Permission:
 
 Role:
+
 - **Owner**: Full access ke seluruh sistem dan seluruh permissions
 - **Admin**: Manajemen menu, user, inventori, laporan, dan operasional pesanan
 - **Kasir / Cashier**: Order, payment, menu view, order item change
 - **Kitchen / Kitchen Staff / Head**: Kitchen display system (accept, prepare, ready, serve), menu view, inventory view
 
 Permission yang aktif & diproteksi middleware:
+
 - User: user.view, user.manage
 - Menu: menu.view, menu.manage
 - Order: order.view, order.create, order.update, order.cancel, order.change
 - Kitchen: kitchen.view, kitchen.update
 - Payment: payment.view, payment.create
 - Inventory: inventory.view, inventory.manage, inventory.adjust
-- Dashboard & Report: dashboard.view, 
-eport.view
+- Dashboard & Report: dashboard.view,
+  eport.view
 
 Respons unauthorized ditangani otomatis via global exception handler di bootstrap/app.php (403 Forbidden).
 
 ---
+
 ## Phase 4
 
 ### Audit Log
@@ -533,6 +539,7 @@ Respons unauthorized ditangani otomatis via global exception handler di bootstra
 Status: ✅ Selesai
 
 Mencatat rekam jejak aktivitas operasional & sistem secara otomatis (auditing trail):
+
 - **Login**: Pencatatan user login (web / POS / staff PIN) dengan IP Address & User Agent
 - **Create Order**: Pembuatan order baru beserta detail meja, jumlah tamu, dan nama pelanggan
 - **Cancel Order**: Pembatalan order beserta histori alasan pembatalan
@@ -543,6 +550,7 @@ Mencatat rekam jejak aktivitas operasional & sistem secara otomatis (auditing tr
 - **User Management**: Perubahan hak akses, peran, dan data pengguna
 
 Endpoint:
+
 - GET /api/v1/audit-logs: Pagination riwayat audit log dengan filter ction, user_id, start_date, end_date, dan outlet_id.
 - Standarisasi envelope AuditLogResource dan otorisasi middleware permission:report.view|user.manage.
 
@@ -631,4 +639,3 @@ Backend dianggap selesai apabila memenuhi kondisi berikut:
 - [x] ✅ API Contract telah dibekukan (API Freeze)
 
 Status Saat Ini: **Seluruh target backend telah 100% terpenuhi, teruji (426 assertions passing), dan siap untuk integrasi Frontend (Flutter Mobile POS, Web KDS, dan Web Dashboard Owner).**
-

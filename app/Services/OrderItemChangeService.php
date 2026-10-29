@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\OrderItemChangeStatus;
 use App\Enums\OrderItemChangeType;
 use App\Enums\OrderItemStatus;
+use App\Events\KdsItemChanged;
 use App\Models\MenuVariant;
 use App\Models\OrderItem;
 use App\Models\OrderItemChange;
@@ -138,7 +139,10 @@ class OrderItemChangeService
                 $this->calculationService->recalculate($order);
             }
 
-            return $change->fresh();
+            $freshChange = $change->fresh();
+            event(new KdsItemChanged($freshChange));
+
+            return $freshChange;
         });
     }
 
@@ -155,7 +159,10 @@ class OrderItemChangeService
 
         ]);
 
-        return $change->fresh();
+        $freshChange = $change->fresh();
+        event(new KdsItemChanged($freshChange));
+
+        return $freshChange;
     }
 
     public function replace(

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\OrderBatchStatus;
 use App\Enums\OrderItemStatus;
+use App\Events\KdsBatchUpdated;
+use App\Events\KdsItemUpdated;
 use App\Models\Ingredient;
 use App\Models\MenuVariant;
 use App\Models\OrderBatch;
@@ -31,7 +33,10 @@ class KitchenService
                 'status' => OrderBatchStatus::Cooking,
             ]);
 
-            return $batch->fresh();
+            $freshBatch = $batch->fresh();
+            event(new KdsBatchUpdated($freshBatch));
+
+            return $freshBatch;
         });
     }
 
@@ -90,7 +95,10 @@ class KitchenService
                 $this->syncBatchStatus($batch);
             }
 
-            return $item->fresh();
+            $freshItem = $item->fresh();
+            event(new KdsItemUpdated($freshItem));
+
+            return $freshItem;
         });
     }
 
@@ -117,7 +125,10 @@ class KitchenService
                 $this->syncBatchStatus($batch);
             }
 
-            return $item->fresh();
+            $freshItem = $item->fresh();
+            event(new KdsItemUpdated($freshItem));
+
+            return $freshItem;
         });
     }
 
@@ -177,7 +188,10 @@ class KitchenService
                 $this->syncBatchStatus($batch);
             }
 
-            return $item->fresh();
+            $freshItem = $item->fresh();
+            event(new KdsItemUpdated($freshItem));
+
+            return $freshItem;
         });
     }
 }
