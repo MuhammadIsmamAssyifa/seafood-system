@@ -5,13 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Outlet extends Model
 {
     use HasFactory;
-
 
     protected $fillable = [
         'restaurant_id',
@@ -22,12 +21,10 @@ class Outlet extends Model
         'status',
     ];
 
-
     protected function casts(): array
     {
         return [];
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -35,42 +32,35 @@ class Outlet extends Model
     |--------------------------------------------------------------------------
     */
 
-
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
-
 
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_outlets');
     }
 
-
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
-
 
     public function orderTables(): HasMany
     {
         return $this->hasMany(OrderTable::class);
     }
 
-
     public function menus(): HasMany
     {
         return $this->hasMany(Menu::class);
     }
 
-
     public function ingredients(): HasMany
     {
         return $this->hasMany(Ingredient::class);
     }
-
 
     public function menuVariants(): HasMany
     {

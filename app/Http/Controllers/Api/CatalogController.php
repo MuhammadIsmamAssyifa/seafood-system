@@ -9,22 +9,25 @@ use App\Models\KitchenStation;
 use App\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 class CatalogController extends Controller
 {
     public function menus(Request $request): AnonymousResourceCollection
     {
         $outlet = $request->user()->outlets()->first();
-        $outletId = $outlet?->id;
+        $outletId = $outlet?->id ?? 1;
 
-        $menus = Menu::with([
-            'variants.cookingMethod',
-            'variants.mainIngredient',
-            'variants.kitchenStation',
-        ])
-            ->when($outletId, fn($q) => $q->where('outlet_id', $outletId))
-            ->where('status', 'active')
-            ->get();
+        $menus = Cache::remember("catalog_menus_outlet_{$outletId}", 300, function () use ($outletId) {
+            return Menu::with([
+                'variants.cookingMethod',
+                'variants.mainIngredient',
+                'variants.kitchenStation',
+            ])
+                ->where('outlet_id', $outletId)
+                ->where('status', 'active')
+                ->get();
+        });
 
         return MenuResource::collection($menus);
     }
@@ -32,11 +35,13 @@ class CatalogController extends Controller
     public function stations(Request $request): AnonymousResourceCollection
     {
         $outlet = $request->user()->outlets()->first();
-        $outletId = $outlet?->id;
+        $outletId = $outlet?->id ?? 1;
 
-        $stations = KitchenStation::when($outletId, fn($q) => $q->where('outlet_id', $outletId))
-            ->where('status', 'active')
-            ->get();
+        $stations = Cache::remember("catalog_stations_outlet_{$outletId}", 300, function () use ($outletId) {
+            return KitchenStation::where('outlet_id', $outletId)
+                ->where('status', 'active')
+                ->get();
+        });
 
         return KitchenStationResource::collection($stations);
     }

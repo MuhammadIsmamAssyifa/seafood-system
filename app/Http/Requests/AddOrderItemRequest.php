@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AddOrderItemRequest extends FormRequest
@@ -17,7 +18,7 @@ class AddOrderItemRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -43,11 +44,11 @@ class AddOrderItemRequest extends FormRequest
     {
         return [
             'menu_variant_id.required' => 'Menu harus dipilih.',
-            'menu_variant_id.exists'   => 'Menu tidak ditemukan.',
+            'menu_variant_id.exists' => 'Menu tidak ditemukan.',
 
             'quantity.required' => 'Quantity wajib diisi.',
-            'quantity.numeric'  => 'Quantity harus berupa angka.',
-            'quantity.gt'       => 'Quantity harus lebih dari 0.',
+            'quantity.numeric' => 'Quantity harus berupa angka.',
+            'quantity.gt' => 'Quantity harus lebih dari 0.',
         ];
     }
 }

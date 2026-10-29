@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\IngredientUnit;
-use App\Enums\StockMovementType;
-use App\Models\AuditLog;
 use App\Models\Ingredient;
 use App\Models\Order;
 use App\Models\OrderTable;
@@ -24,16 +22,19 @@ use Tests\TestCase;
 class AuditLogTest extends TestCase
 {
     protected User $owner;
+
     protected User $staff;
+
     protected Outlet $outlet;
+
     protected OrderTable $table;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        (new RoleSeeder())->run();
-        (new PermissionSeeder())->run();
+        (new RoleSeeder)->run();
+        (new PermissionSeeder)->run();
 
         $restaurant = Restaurant::firstOrCreate(
             ['code' => 'SEAFOOD-RESTO'],
@@ -71,7 +72,7 @@ class AuditLogTest extends TestCase
 
         $this->table = OrderTable::firstOrCreate(
             ['outlet_id' => $this->outlet->id, 'number' => 'AL-01'],
-            ['capacity' => 4, 'status' => 'available']
+            ['status' => 'available']
         );
     }
 
@@ -97,8 +98,7 @@ class AuditLogTest extends TestCase
 
         $table = OrderTable::create([
             'outlet_id' => $this->outlet->id,
-            'number' => 'AL-' . uniqid(),
-            'capacity' => 4,
+            'number' => 'AL-'.uniqid(),
             'status' => 'available',
         ]);
 
@@ -125,7 +125,7 @@ class AuditLogTest extends TestCase
         $order = Order::create([
             'outlet_id' => $this->outlet->id,
             'order_table_id' => $this->table->id,
-            'order_number' => 'ORD-' . date('YmdHis') . '-TEST',
+            'order_number' => 'ORD-'.date('YmdHis').'-TEST',
             'customer_name' => 'Siti',
             'guest_count' => 2,
             'status' => 'draft',
@@ -203,10 +203,10 @@ class AuditLogTest extends TestCase
                         'ip_address',
                         'user_agent',
                         'created_at',
-                    ]
+                    ],
                 ],
                 'links',
-                'meta'
+                'meta',
             ]);
     }
 

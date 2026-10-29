@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryBatch extends Model
 {
-
     protected $fillable = [
 
         'outlet_id',
@@ -27,31 +26,20 @@ class InventoryBatch extends Model
 
     ];
 
-
-
     protected function casts(): array
     {
         return [
 
-            'quantity' =>
-            'decimal:3',
+            'quantity' => 'decimal:3',
 
+            'remaining_quantity' => 'decimal:3',
 
-            'remaining_quantity' =>
-            'decimal:3',
+            'cost_per_unit' => 'decimal:2',
 
-
-            'cost_per_unit' =>
-            'decimal:2',
-
-
-            'received_at' =>
-            'datetime',
+            'received_at' => 'datetime',
 
         ];
     }
-
-
 
     public function outlet(): BelongsTo
     {
@@ -59,8 +47,6 @@ class InventoryBatch extends Model
             Outlet::class
         );
     }
-
-
 
     public function ingredient(): BelongsTo
     {

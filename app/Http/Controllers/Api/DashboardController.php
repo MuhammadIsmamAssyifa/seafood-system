@@ -30,4 +30,3 @@ class DashboardController extends Controller
         return new DashboardSummaryResource($summary);
     }
 }
-

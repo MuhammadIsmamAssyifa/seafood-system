@@ -34,8 +34,8 @@ class UpdateOrderItemRequest extends FormRequest
     {
         return [
             'quantity.required' => 'Quantity wajib diisi.',
-            'quantity.numeric'  => 'Quantity harus berupa angka.',
-            'quantity.gt'       => 'Quantity harus lebih dari 0.',
+            'quantity.numeric' => 'Quantity harus berupa angka.',
+            'quantity.gt' => 'Quantity harus lebih dari 0.',
         ];
     }
 }

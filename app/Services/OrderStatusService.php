@@ -22,37 +22,30 @@ class OrderStatusService
 
             $newStatus = match (true) {
                 $items->every(
-                    fn($item) =>
-                    $item->status === OrderItemStatus::Served
-                )
-                => OrderStatus::Completed,
+                    fn ($item) => $item->status === OrderItemStatus::Served
+                ) => OrderStatus::Completed,
 
                 $items->every(
-                    fn($item) =>
-                    in_array(
+                    fn ($item) => in_array(
                         $item->status,
                         [
                             OrderItemStatus::Ready,
                             OrderItemStatus::Served,
                         ]
                     )
-                )
-                => OrderStatus::Ready,
+                ) => OrderStatus::Ready,
 
                 $items->contains(
-                    fn($item) =>
-                    in_array(
+                    fn ($item) => in_array(
                         $item->status,
                         [
                             OrderItemStatus::Preparing,
                             OrderItemStatus::Ready,
                         ]
                     )
-                )
-                => OrderStatus::Preparing,
+                ) => OrderStatus::Preparing,
 
-                default
-                => $order->status,
+                default => $order->status,
             };
 
             if ($order->status !== $newStatus) {

@@ -10,4 +10,3 @@ enum IngredientUnit: string
     case Ml = 'ml';
     case Pcs = 'pcs';
 }
-

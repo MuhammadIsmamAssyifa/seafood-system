@@ -17,4 +17,3 @@ class InventoryReportResource extends JsonResource
         return is_array($this->resource) ? $this->resource : parent::toArray($request);
     }
 }
-

@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ProfitCalculationService
 {
@@ -22,7 +22,10 @@ class ProfitCalculationService
         $grossProfit = (float) $order->gross_profit;
         $marginPercentage = $revenue > 0 ? round(($grossProfit / $revenue) * 100, 2) : 0.0;
 
-        $itemsBreakdown = $order->items->map(function (OrderItem $item) {
+        /** @var Collection<int, OrderItem> $orderItems */
+        $orderItems = $order->items;
+
+        $itemsBreakdown = $orderItems->map(function ($item) {
             $itemRevenue = (float) $item->subtotal;
             $itemCogs = (float) $item->cogs;
             $itemProfit = (float) $item->gross_profit;
@@ -125,4 +128,3 @@ class ProfitCalculationService
         ];
     }
 }
-

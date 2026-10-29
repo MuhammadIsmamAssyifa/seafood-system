@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('number');
             $table->string('status', 30)->default('available');
             $table->timestampsTz();
-            $table->unique(['outlet_id', 'number',]);
+            $table->unique(['outlet_id', 'number']);
         });
     }
 

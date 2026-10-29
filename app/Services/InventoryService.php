@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Enums\StockMovementType;
-use App\Models\InventoryBatch;
-use App\Models\StockMovement;
 use App\Models\Ingredient;
+use App\Models\InventoryBatch;
+use App\Models\OrderItem;
+use App\Models\StockMovement;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +16,7 @@ class InventoryService
     public function __construct(
         protected AuditLogService $auditLogService
     ) {}
+
     public function addStock(array $data): InventoryBatch
     {
         return DB::transaction(function () use ($data) {
@@ -37,11 +40,11 @@ class InventoryService
                 'quantity' => $data['quantity'],
                 'cost_per_unit' => $data['cost_per_unit'],
                 'total_cost' => $totalCost,
-                'created_by' => auth()->id() ?? $data['created_by'] ?? \App\Models\User::first()?->id,
+                'created_by' => auth()->id() ?? $data['created_by'] ?? User::first()?->id,
                 'note' => $data['note'] ?? null,
             ]);
 
-            $this->auditLogService?->logInventoryAdjustment($movement, $data['note'] ?? 'Penambahan stok');
+            $this->auditLogService->logInventoryAdjustment($movement, $data['note'] ?? 'Penambahan stok');
 
             return $batch;
         });
@@ -108,7 +111,7 @@ class InventoryService
                     'total_cost' => $cost,
                     'reference_type' => $reference ? get_class($reference) : null,
                     'reference_id' => $reference?->id,
-                    'created_by' => auth()->id() ?? ($reference instanceof \App\Models\OrderItem ? $reference->orderBatch?->order?->created_by : null) ?? \App\Models\User::first()?->id,
+                    'created_by' => auth()->id() ?? ($reference instanceof OrderItem ? $reference->orderBatch?->order?->created_by : null) ?? User::first()?->id,
                 ]);
 
                 $movements[] = [

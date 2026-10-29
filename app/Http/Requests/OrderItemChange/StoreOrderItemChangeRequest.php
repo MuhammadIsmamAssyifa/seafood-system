@@ -31,4 +31,3 @@ class StoreOrderItemChangeRequest extends FormRequest
         ];
     }
 }
-

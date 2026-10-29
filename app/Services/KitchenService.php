@@ -4,11 +4,10 @@ namespace App\Services;
 
 use App\Enums\OrderBatchStatus;
 use App\Enums\OrderItemStatus;
+use App\Models\Ingredient;
+use App\Models\MenuVariant;
 use App\Models\OrderBatch;
 use App\Models\OrderItem;
-use App\Services\InventoryService;
-use App\Services\OrderCalculationService;
-use App\Services\OrderStatusService;
 use Illuminate\Support\Facades\DB;
 
 class KitchenService
@@ -45,6 +44,7 @@ class KitchenService
                 );
             }
 
+            /** @var MenuVariant|null $variant */
             $variant = $item->menuVariant;
             $recipe = $variant?->recipe()->with('items.ingredient')->first();
             $itemCogs = 0;
@@ -60,7 +60,7 @@ class KitchenService
                     );
                     $itemCogs += $deduction['cost'];
                 }
-            } elseif ($variant?->mainIngredient) {
+            } elseif ($variant?->mainIngredient instanceof Ingredient) {
                 // Deduct based on main ingredient and conversion rate
                 $deductQty = (float) ($item->inventory_quantity > 0 ? $item->inventory_quantity : $item->quantity);
                 $deduction = $this->inventoryService->deductStock(
@@ -85,7 +85,10 @@ class KitchenService
                 $this->orderStatusService->sync($order);
             }
 
-            $this->syncBatchStatus($item->orderBatch);
+            $batch = $item->orderBatch;
+            if ($batch instanceof OrderBatch) {
+                $this->syncBatchStatus($batch);
+            }
 
             return $item->fresh();
         });
@@ -109,7 +112,10 @@ class KitchenService
                 $this->orderStatusService->sync($order);
             }
 
-            $this->syncBatchStatus($item->orderBatch);
+            $batch = $item->orderBatch;
+            if ($batch instanceof OrderBatch) {
+                $this->syncBatchStatus($batch);
+            }
 
             return $item->fresh();
         });
@@ -121,8 +127,7 @@ class KitchenService
 
         if (
             $items->every(
-                fn($item) =>
-                in_array(
+                fn ($item) => in_array(
                     $item->status,
                     [
                         OrderItemStatus::Ready,
@@ -140,8 +145,7 @@ class KitchenService
 
         if (
             $items->contains(
-                fn($item) =>
-                $item->status === OrderItemStatus::Preparing
+                fn ($item) => $item->status === OrderItemStatus::Preparing
             )
         ) {
             $batch->update([
@@ -168,7 +172,10 @@ class KitchenService
                 $this->orderStatusService->sync($order);
             }
 
-            $this->syncBatchStatus($item->orderBatch);
+            $batch = $item->orderBatch;
+            if ($batch instanceof OrderBatch) {
+                $this->syncBatchStatus($batch);
+            }
 
             return $item->fresh();
         });

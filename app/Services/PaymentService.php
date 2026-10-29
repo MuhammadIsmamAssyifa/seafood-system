@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\OrderBatchStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
-use App\Enums\OrderBatchStatus;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;

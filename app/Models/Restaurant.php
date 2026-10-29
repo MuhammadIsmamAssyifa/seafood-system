@@ -10,19 +10,16 @@ class Restaurant extends Model
 {
     use HasFactory;
 
-
     protected $fillable = [
         'name',
         'code',
         'status',
     ];
 
-
     protected function casts(): array
     {
         return [];
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -30,12 +27,10 @@ class Restaurant extends Model
     |--------------------------------------------------------------------------
     */
 
-
     public function outlets(): HasMany
     {
         return $this->hasMany(Outlet::class);
     }
-
 
     public function users(): HasMany
     {

@@ -2,14 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-
-use App\Models\Outlet;
-use App\Models\KitchenStation;
-use App\Models\Ingredient;
-use App\Models\Menu;
 use App\Models\CookingMethod;
+use App\Models\Ingredient;
+use App\Models\KitchenStation;
+use App\Models\Menu;
 use App\Models\MenuVariant;
+use App\Models\Outlet;
+use Illuminate\Database\Seeder;
 
 class CatalogSeeder extends Seeder
 {

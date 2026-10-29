@@ -4,18 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AddOrderItemRequest;
-use App\Models\Order;
-use App\Services\OrderItemService;
-use App\Http\Resources\OrderResource;
 use App\Http\Requests\UpdateOrderItemRequest;
+use App\Http\Resources\OrderResource;
+use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\OrderItemService;
 
 class OrderItemController extends Controller
 {
     public function __construct(
         protected OrderItemService $orderItemService
     ) {}
-
 
     /**
      * Add item to order
@@ -49,6 +48,7 @@ class OrderItemController extends Controller
             $order->load('batches.items')
         );
     }
+
     public function destroy(
         OrderItem $orderItem
     ): OrderResource {

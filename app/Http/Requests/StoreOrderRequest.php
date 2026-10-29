@@ -6,38 +6,31 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreOrderRequest extends FormRequest
 {
-
     public function authorize(): bool
     {
         return true;
     }
 
-
     public function rules(): array
     {
         return [
 
-            'order_table_id'
-            => [
+            'order_table_id' => [
                 'required',
-                'exists:order_tables,id'
+                'exists:order_tables,id',
             ],
 
-
-            'customer_name'
-            => [
+            'customer_name' => [
                 'nullable',
                 'string',
-                'max:100'
+                'max:100',
             ],
 
-
-            'guest_count'
-            => [
+            'guest_count' => [
                 'required',
                 'integer',
-                'min:1'
-            ]
+                'min:1',
+            ],
 
         ];
     }

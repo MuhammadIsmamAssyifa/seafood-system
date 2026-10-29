@@ -10,21 +10,17 @@ class UserOutlet extends Model
 {
     use HasFactory;
 
-
     protected $table = 'user_outlets';
-
 
     protected $fillable = [
         'user_id',
         'outlet_id',
     ];
 
-
     protected function casts(): array
     {
         return [];
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -32,12 +28,10 @@ class UserOutlet extends Model
     |--------------------------------------------------------------------------
     */
 
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-
 
     public function outlet(): BelongsTo
     {

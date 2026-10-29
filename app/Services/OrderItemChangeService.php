@@ -5,11 +5,9 @@ namespace App\Services;
 use App\Enums\OrderItemChangeStatus;
 use App\Enums\OrderItemChangeType;
 use App\Enums\OrderItemStatus;
-use App\Enums\OrderBatchStatus;
 use App\Models\MenuVariant;
 use App\Models\OrderItem;
 use App\Models\OrderItemChange;
-use App\Services\OrderCalculationService;
 use Illuminate\Support\Facades\DB;
 
 class OrderItemChangeService
@@ -29,7 +27,6 @@ class OrderItemChangeService
 
         return DB::transaction(function () use ($item, $data) {
 
-
             if (
                 in_array(
                     $item->status,
@@ -47,50 +44,29 @@ class OrderItemChangeService
                 );
             }
 
-
-
             return OrderItemChange::create([
 
-                'order_item_id' =>
-                $item->id,
+                'order_item_id' => $item->id,
 
+                'type' => $data['type'],
 
-                'type' =>
-                $data['type'],
+                'old_quantity' => $item->quantity,
 
+                'old_price' => $item->price_snapshot,
 
-                'old_quantity' =>
-                $item->quantity,
+                'new_quantity' => $data['quantity'] ?? $item->quantity,
 
+                'new_price' => $data['price'] ?? $item->price_snapshot,
 
-                'old_price' =>
-                $item->price_snapshot,
+                'reason' => $data['reason'],
 
+                'status' => OrderItemChangeStatus::PendingCustomer,
 
-                'new_quantity' =>
-                $data['quantity'] ?? $item->quantity,
-
-
-                'new_price' =>
-                $data['price'] ?? $item->price_snapshot,
-
-
-                'reason' =>
-                $data['reason'],
-
-
-                'status' =>
-                OrderItemChangeStatus::PendingCustomer,
-
-
-                'created_by' =>
-                auth()->id(),
+                'created_by' => auth()->id(),
 
             ]);
         });
     }
-
-
 
     /**
      * Customer approve perubahan
@@ -100,7 +76,6 @@ class OrderItemChangeService
     ) {
 
         return DB::transaction(function () use ($change) {
-
 
             if (
                 $change->status !==
@@ -112,13 +87,9 @@ class OrderItemChangeService
                 );
             }
 
-
             $item = $change->orderItem;
 
-
-
             switch ($change->type) {
-
 
                 case OrderItemChangeType::QuantityChange:
 
@@ -134,27 +105,19 @@ class OrderItemChangeService
 
                     break;
 
-
-
                 case OrderItemChangeType::Cancel:
-
 
                     $item->update([
 
-                        'status' =>
-                        OrderItemStatus::Cancelled,
+                        'status' => OrderItemStatus::Cancelled,
 
-                        'subtotal' =>
-                        0,
+                        'subtotal' => 0,
 
                     ]);
 
                     break;
 
-
-
                 case OrderItemChangeType::Replace:
-
 
                     /*
                     Replace akan dibuat sebagai
@@ -164,11 +127,8 @@ class OrderItemChangeService
                     break;
             }
 
-
-
             $change->update([
-                'status' =>
-                OrderItemChangeStatus::Approved
+                'status' => OrderItemChangeStatus::Approved,
             ]);
 
             $this->auditLogService->logPriceChange($change->fresh());
@@ -178,13 +138,9 @@ class OrderItemChangeService
                 $this->calculationService->recalculate($order);
             }
 
-
-
             return $change->fresh();
         });
     }
-
-
 
     /**
      * Customer menolak
@@ -195,11 +151,9 @@ class OrderItemChangeService
 
         $change->update([
 
-            'status' =>
-            OrderItemChangeStatus::Rejected
+            'status' => OrderItemChangeStatus::Rejected,
 
         ]);
-
 
         return $change->fresh();
     }
@@ -210,7 +164,6 @@ class OrderItemChangeService
     ) {
 
         return DB::transaction(function () use ($oldItem, $data) {
-
 
             if (
                 in_array(
@@ -228,8 +181,6 @@ class OrderItemChangeService
                 );
             }
 
-
-
             /*
         |--------------------------------------------------------------------------
         | Cancel item lama
@@ -237,11 +188,8 @@ class OrderItemChangeService
         */
 
             $oldItem->update([
-                'status' =>
-                OrderItemStatus::Cancelled,
+                'status' => OrderItemStatus::Cancelled,
             ]);
-
-
 
             /*
         |--------------------------------------------------------------------------
@@ -254,8 +202,6 @@ class OrderItemChangeService
                     $data['menu_variant_id']
                 );
 
-
-
             /*
         |--------------------------------------------------------------------------
         | Buat item pengganti
@@ -264,58 +210,33 @@ class OrderItemChangeService
 
             $newItem = OrderItem::create([
 
-                'order_batch_id' =>
-                $oldItem->order_batch_id,
+                'order_batch_id' => $oldItem->order_batch_id,
 
+                'menu_variant_id' => $menuVariant->id,
 
-                'menu_variant_id' =>
-                $menuVariant->id,
+                'menu_name_snapshot' => $menuVariant->menu->name,
 
+                'variant_name_snapshot' => $menuVariant->name,
 
-                'menu_name_snapshot' =>
-                $menuVariant->menu->name,
+                'price_snapshot' => $menuVariant->price,
 
+                'sales_unit' => $menuVariant->sales_unit,
 
-                'variant_name_snapshot' =>
-                $menuVariant->name,
+                'quantity' => $data['quantity'],
 
+                'requested_quantity' => $data['quantity'],
 
-                'price_snapshot' =>
-                $menuVariant->price,
+                'confirmed_quantity' => null,
 
-
-                'sales_unit' =>
-                $menuVariant->sales_unit,
-
-
-                'quantity' =>
-                $data['quantity'],
-
-
-                'requested_quantity' =>
-                $data['quantity'],
-
-
-                'confirmed_quantity' =>
-                null,
-
-
-                'subtotal' =>
-                $menuVariant->price *
+                'subtotal' => $menuVariant->price *
                     $data['quantity'],
 
-
-                'inventory_quantity' =>
-                $data['quantity'] *
+                'inventory_quantity' => $data['quantity'] *
                     $menuVariant->conversion_rate,
 
-
-                'status' =>
-                OrderItemStatus::Waiting,
+                'status' => OrderItemStatus::Waiting,
 
             ]);
-
-
 
             /*
         |--------------------------------------------------------------------------
@@ -325,54 +246,32 @@ class OrderItemChangeService
 
             OrderItemChange::create([
 
-                'order_item_id' =>
-                $oldItem->id,
+                'order_item_id' => $oldItem->id,
 
+                'type' => OrderItemChangeType::Replace,
 
-                'type' =>
-                OrderItemChangeType::Replace,
+                'old_quantity' => $oldItem->quantity,
 
+                'old_price' => $oldItem->price_snapshot,
 
-                'old_quantity' =>
-                $oldItem->quantity,
+                'new_quantity' => $data['quantity'],
 
+                'new_price' => $menuVariant->price,
 
-                'old_price' =>
-                $oldItem->price_snapshot,
+                'replacement_item_id' => $newItem->id,
 
+                'status' => OrderItemChangeStatus::Approved,
 
-                'new_quantity' =>
-                $data['quantity'],
+                'reason' => $data['reason'],
 
-
-                'new_price' =>
-                $menuVariant->price,
-
-
-                'replacement_item_id' =>
-                $newItem->id,
-
-
-                'status' =>
-                OrderItemChangeStatus::Approved,
-
-
-                'reason' =>
-                $data['reason'],
-
-
-                'created_by' =>
-                auth()->id(),
+                'created_by' => auth()->id(),
 
             ]);
-
-
 
             $order = $oldItem->orderBatch?->order ?? $oldItem->order;
             if ($order) {
                 $this->calculationService->recalculate($order);
             }
-
 
             return $newItem;
         });

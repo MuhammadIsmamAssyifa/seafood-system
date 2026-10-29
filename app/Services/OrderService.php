@@ -28,7 +28,7 @@ class OrderService
             $order = Order::create([
                 'outlet_id' => $table->outlet_id,
                 'order_table_id' => $table->id,
-                'order_number' => 'ORD-' . date('YmdHis') . '-' . str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT),
+                'order_number' => 'ORD-'.date('YmdHis').'-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT),
                 'customer_name' => $data['customer_name'] ?? null,
                 'guest_count' => $data['guest_count'],
                 'status' => OrderStatus::Draft,

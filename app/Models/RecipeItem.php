@@ -42,4 +42,3 @@ class RecipeItem extends Model
         return $this->belongsTo(Ingredient::class);
     }
 }
-

@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Restaurant;
 use App\Models\Outlet;
+use App\Models\Restaurant;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
@@ -30,9 +30,7 @@ class UserSeeder extends Seeder
             'status' => 'active',
         ]);
 
-
         $owner->assignRole('owner');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -49,9 +47,7 @@ class UserSeeder extends Seeder
             'status' => 'active',
         ]);
 
-
         $cashier->assignRole('cashier');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -68,9 +64,7 @@ class UserSeeder extends Seeder
 
         ]);
 
-
         $kitchenHead->assignRole('kitchen_head');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -86,9 +80,7 @@ class UserSeeder extends Seeder
             'status' => 'active',
         ]);
 
-
         $kitchenStaff->assignRole('kitchen_staff');
-
 
         /*
         |--------------------------------------------------------------------------

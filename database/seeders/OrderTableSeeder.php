@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\OrderTable;
 use App\Models\Outlet;
+use Illuminate\Database\Seeder;
 
 class OrderTableSeeder extends Seeder
 {
@@ -12,10 +12,9 @@ class OrderTableSeeder extends Seeder
     {
         $outlet = Outlet::first();
 
-        if (!$outlet) {
+        if (! $outlet) {
             return;
         }
-
 
         foreach (range(1, 10) as $number) {
 

@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\OrderBatchStatus;
+use App\Enums\OrderItemStatus;
+use App\Enums\OrderStatus;
+use App\Enums\SalesUnit;
+use App\Models\MenuVariant;
 use App\Models\Order;
 use App\Models\OrderBatch;
 use App\Models\OrderItem;
-use App\Models\MenuVariant;
-use App\Enums\OrderItemStatus;
-use App\Enums\OrderBatchStatus;
-use App\Enums\OrderStatus;
-use App\Enums\SalesUnit;
 use Illuminate\Support\Facades\DB;
 
 class OrderItemService
@@ -20,6 +20,7 @@ class OrderItemService
 
     private function getOrCreateWaitingBatch(Order $order): OrderBatch
     {
+        /** @var OrderBatch|null $batch */
         $batch = $order->batches()
             ->where('status', OrderBatchStatus::Waiting)
             ->latest('batch_number')
@@ -29,12 +30,15 @@ class OrderItemService
             return $batch;
         }
 
-        $lastBatchNumber = $order->batches()->max('batch_number') ?? 0;
+        $lastBatchNumber = (int) ($order->batches()->max('batch_number') ?? 0);
 
-        return $order->batches()->create([
+        /** @var OrderBatch $newBatch */
+        $newBatch = $order->batches()->create([
             'batch_number' => $lastBatchNumber + 1,
             'status' => OrderBatchStatus::Waiting,
         ]);
+
+        return $newBatch;
     }
 
     public function addItem(Order $order, array $data): Order
@@ -54,7 +58,6 @@ class OrderItemService
             }
 
             $batch = $this->getOrCreateWaitingBatch($order);
-
 
             /*
         |--------------------------------------------------------------------------
@@ -78,7 +81,6 @@ class OrderItemService
                 }
             }
 
-
             /*
         |--------------------------------------------------------------------------
         | Hitung subtotal
@@ -86,7 +88,6 @@ class OrderItemService
         */
 
             $subtotal = $menuVariant->price * $data['quantity'];
-
 
             /*
         |--------------------------------------------------------------------------
@@ -107,7 +108,6 @@ class OrderItemService
                 'status' => OrderItemStatus::Waiting,
             ]);
 
-
             /*
         |--------------------------------------------------------------------------
         | Update total order
@@ -123,8 +123,10 @@ class OrderItemService
     public function updateItem(OrderItem $item, array $data): Order
     {
         return DB::transaction(function () use ($item, $data) {
-            $order = $item->orderBatch()->firstOrFail()
-                ->order()->lockForUpdate()->firstOrFail();
+            /** @var OrderBatch $batch */
+            $batch = $item->orderBatch()->firstOrFail();
+            /** @var Order $order */
+            $order = $batch->order()->lockForUpdate()->firstOrFail();
 
             if ($order->status !== OrderStatus::Draft) {
                 throw new \DomainException(
@@ -134,7 +136,7 @@ class OrderItemService
 
             $quantity = $data['quantity'] ?? null;
 
-            if (!is_numeric($quantity) || $quantity <= 0) {
+            if (! is_numeric($quantity) || $quantity <= 0) {
                 throw new \InvalidArgumentException('Quantity harus lebih dari 0.');
             }
 
@@ -164,8 +166,8 @@ class OrderItemService
             }
 
             $item->update([
-                'quantity'           => $quantity,
-                'subtotal'           => $item->price_snapshot * $quantity,
+                'quantity' => $quantity,
+                'subtotal' => $item->price_snapshot * $quantity,
                 'inventory_quantity' => $quantity * $conversionRate,
             ]);
 
@@ -178,7 +180,10 @@ class OrderItemService
     public function deleteItem(OrderItem $item): Order
     {
         return DB::transaction(function () use ($item) {
-            $order = $item->orderBatch()->firstOrFail()->order()
+            /** @var OrderBatch $batch */
+            $batch = $item->orderBatch()->firstOrFail();
+            /** @var Order $order */
+            $order = $batch->order()
                 ->lockForUpdate()
                 ->firstOrFail();
 

@@ -11,7 +11,7 @@ class OrderCalculationService
         $items = $order->batches()
             ->with('items')
             ->get()
-            ->flatMap->items;
+            ->flatMap(fn ($batch) => $batch->items);
 
         $subtotal = round((float) $items->sum('subtotal'), 2);
         $totalCogs = round((float) $items->sum('cogs'), 2);

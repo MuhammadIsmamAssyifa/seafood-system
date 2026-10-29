@@ -107,4 +107,3 @@ class ReportController extends Controller
         return new StockMovementReportResource($report);
     }
 }
-

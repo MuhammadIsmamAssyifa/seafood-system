@@ -33,7 +33,6 @@ return new class extends Migration
                 30
             );
 
-
             $table->decimal(
                 'quantity',
                 12,

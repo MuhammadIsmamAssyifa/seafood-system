@@ -2,28 +2,32 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TableStatus;
 use App\Models\CookingMethod;
 use App\Models\Ingredient;
+use App\Models\InventoryBatch;
 use App\Models\KitchenStation;
 use App\Models\Menu;
 use App\Models\MenuVariant;
 use App\Models\Order;
-use App\Models\OrderBatch;
-use App\Models\OrderItem;
 use App\Models\OrderTable;
 use App\Models\Outlet;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Services\InventoryService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class ApiEndpointsTest extends TestCase
 {
     protected User $user;
+
     protected Outlet $outlet;
+
     protected OrderTable $table;
+
     protected MenuVariant $variant;
 
     protected function setUp(): void
@@ -31,8 +35,8 @@ class ApiEndpointsTest extends TestCase
         parent::setUp();
 
         // Seed roles & permissions
-        (new RoleSeeder())->run();
-        (new PermissionSeeder())->run();
+        (new RoleSeeder)->run();
+        (new PermissionSeeder)->run();
 
         $restaurant = Restaurant::firstOrCreate(
             ['code' => 'SEAFOOD-RESTO'],
@@ -58,7 +62,7 @@ class ApiEndpointsTest extends TestCase
 
         $this->user->syncRoles(['owner']);
 
-        if (!$this->user->outlets()->where('outlets.id', $this->outlet->id)->exists()) {
+        if (! $this->user->outlets()->where('outlets.id', $this->outlet->id)->exists()) {
             $this->user->outlets()->attach($this->outlet->id);
         }
 
@@ -66,7 +70,7 @@ class ApiEndpointsTest extends TestCase
             ['outlet_id' => $this->outlet->id, 'number' => 'T-01'],
             ['status' => 'available']
         );
-        $this->table->update(['status' => \App\Enums\TableStatus::Available]);
+        $this->table->update(['status' => TableStatus::Available]);
 
         $station = KitchenStation::firstOrCreate(
             ['outlet_id' => $this->outlet->id, 'code' => 'GRILL'],
@@ -139,10 +143,10 @@ class ApiEndpointsTest extends TestCase
                                 'ingredient',
                                 'station',
                                 'cooking_method',
-                            ]
-                        ]
-                    ]
-                ]
+                            ],
+                        ],
+                    ],
+                ],
             ]);
     }
 
@@ -159,14 +163,14 @@ class ApiEndpointsTest extends TestCase
                         'name',
                         'code',
                         'status',
-                    ]
-                ]
+                    ],
+                ],
             ]);
     }
 
     public function test_order_lifecycle(): void
     {
-        $this->table->update(['status' => \App\Enums\TableStatus::Available]);
+        $this->table->update(['status' => TableStatus::Available]);
 
         // 1. Create order
         $createOrderRes = $this->actingAs($this->user)
@@ -223,7 +227,7 @@ class ApiEndpointsTest extends TestCase
 
     public function test_order_item_change_workflow(): void
     {
-        $this->table->update(['status' => \App\Enums\TableStatus::Available]);
+        $this->table->update(['status' => TableStatus::Available]);
 
         // 1. Create order and item
         $createOrderRes = $this->actingAs($this->user)
@@ -271,7 +275,7 @@ class ApiEndpointsTest extends TestCase
     public function test_domain_exception_returns_422(): void
     {
         // Try to create order on already occupied table
-        $this->table->update(['status' => \App\Enums\TableStatus::Occupied]);
+        $this->table->update(['status' => TableStatus::Occupied]);
 
         $response = $this->actingAs($this->user)
             ->postJson('/api/v1/orders', [
@@ -328,7 +332,7 @@ class ApiEndpointsTest extends TestCase
 
     public function test_cashier_can_create_order_and_payment(): void
     {
-        $this->table->update(['status' => \App\Enums\TableStatus::Available]);
+        $this->table->update(['status' => TableStatus::Available]);
 
         $cashier = User::firstOrCreate(
             ['email' => 'cashier_test@seafood.com'],
@@ -353,11 +357,14 @@ class ApiEndpointsTest extends TestCase
 
     public function test_fifo_costing_and_profit_calculation(): void
     {
-        $this->table->update(['status' => \App\Enums\TableStatus::Available]);
+        $this->table->update(['status' => TableStatus::Available]);
 
         // 1. Stock In via InventoryService (2 batches FIFO)
-        $inventoryService = app(\App\Services\InventoryService::class);
+        $inventoryService = app(InventoryService::class);
         $ingredient = $this->variant->mainIngredient;
+
+        // Clear previous batches for this ingredient to ensure clean FIFO test state
+        InventoryBatch::where('ingredient_id', $ingredient->id)->update(['remaining_quantity' => 0]);
 
         // Batch 1: 5 kg @ Rp 20,000
         $inventoryService->addStock([
@@ -465,5 +472,46 @@ class ApiEndpointsTest extends TestCase
 
         $response->assertStatus(403)
             ->assertJsonPath('error', 'forbidden');
+    }
+
+    public function test_orders_index_returns_paginated_resource_with_eager_loading(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/v1/orders?per_page=5');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'order_number',
+                        'customer_name',
+                        'guest_count',
+                        'status',
+                        'subtotal',
+                        'grand_total',
+                        'table',
+                        'batches',
+                    ],
+                ],
+                'links',
+                'meta',
+            ]);
+    }
+
+    public function test_catalog_caching_performance(): void
+    {
+        Cache::flush();
+
+        // First call caches the query
+        $res1 = $this->actingAs($this->user)->getJson('/api/v1/catalog/menus');
+        $res1->assertStatus(200);
+
+        $this->assertTrue(Cache::has("catalog_menus_outlet_{$this->outlet->id}"));
+
+        // Second call retrieves from cache
+        $res2 = $this->actingAs($this->user)->getJson('/api/v1/catalog/menus');
+        $res2->assertStatus(200);
+        $this->assertEquals($res1->json(), $res2->json());
     }
 }

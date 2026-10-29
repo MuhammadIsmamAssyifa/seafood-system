@@ -31,4 +31,3 @@ class ReplaceOrderItemRequest extends FormRequest
         ];
     }
 }
-

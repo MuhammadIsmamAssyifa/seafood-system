@@ -15,26 +15,20 @@ return new class extends Migration
 
             $table->id();
 
-
             $table->foreignId('outlet_id')
                 ->constrained()
                 ->cascadeOnDelete();
 
-
             $table->string('name');
-
 
             $table->string('unit')
                 ->default('kg');
 
-
             $table->string('type', 30)
                 ->default('raw_material');
 
-
             $table->string('status', 30)
                 ->default('active');
-
 
             $table->timestampsTz();
         });

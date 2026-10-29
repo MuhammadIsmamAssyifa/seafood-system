@@ -18,9 +18,10 @@ class OrderBatchResource extends JsonResource
             'batch_number' => $this->batch_number,
             'status' => $this->status,
             'sent_to_kitchen_at' => $this->sent_to_kitchen_at,
-            'order' => $this->whenLoaded('order', fn() => [
+            'order' => $this->whenLoaded('order', fn () => [
                 'id' => $this->order->id,
                 'order_number' => $this->order->order_number,
+                'table_number' => $this->order->orderTable?->number,
             ]),
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
             'created_at' => $this->created_at,

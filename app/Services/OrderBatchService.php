@@ -16,13 +16,11 @@ class OrderBatchService
 
             $order = $batch->order;
 
-
             if ($batch->status !== OrderBatchStatus::Waiting) {
                 throw new \DomainException(
                     'Batch ini sudah tidak dapat dikirim.'
                 );
             }
-
 
             if ($batch->items()->count() === 0) {
                 throw new \DomainException(
@@ -30,11 +28,9 @@ class OrderBatchService
                 );
             }
 
-
             $batch->update([
                 'status' => OrderBatchStatus::Sent,
             ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -50,7 +46,6 @@ class OrderBatchService
                     'status' => OrderStatus::Submitted,
                 ]);
 
-
                 OrderStatusHistory::create([
                     'order_id' => $order->id,
                     'from_status' => $oldStatus,
@@ -59,10 +54,7 @@ class OrderBatchService
                 ]);
             }
 
-
             return $batch->fresh();
         });
     }
 }
-
-

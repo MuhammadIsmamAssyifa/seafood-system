@@ -16,6 +16,7 @@ class StaffLoginRequest extends FormRequest
         return [
             'username' => ['required', 'string'],
             'pin' => ['required', 'string'],
+            'device_name' => ['nullable', 'string', 'max:100'],
         ];
     }
 
@@ -27,4 +28,3 @@ class StaffLoginRequest extends FormRequest
         ];
     }
 }
-

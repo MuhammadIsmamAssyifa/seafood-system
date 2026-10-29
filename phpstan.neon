@@ -1,0 +1,16 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+
+    level: 5
+
+    treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        - '#Access to an undefined property App\\Http\\Resources\\[a-zA-Z0-9]+::\$[a-zA-Z0-9_]+#'
+        - '#Using nullsafe property access "\?\->[a-zA-Z0-9_]+" on left side of \?\? is unnecessary\.#'
+        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$[a-zA-Z0-9_]+#'
+        - '#contains unresolvable type#'

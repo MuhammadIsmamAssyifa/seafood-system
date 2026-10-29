@@ -2,14 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TableStatus;
 use App\Models\CookingMethod;
 use App\Models\Ingredient;
 use App\Models\KitchenStation;
 use App\Models\Menu;
 use App\Models\MenuVariant;
-use App\Models\Order;
-use App\Models\OrderBatch;
-use App\Models\OrderItem;
 use App\Models\OrderTable;
 use App\Models\Outlet;
 use App\Models\Restaurant;
@@ -21,17 +19,21 @@ use Tests\TestCase;
 class ReportingTest extends TestCase
 {
     protected User $owner;
+
     protected User $cashier;
+
     protected Outlet $outlet;
+
     protected OrderTable $table;
+
     protected MenuVariant $variant;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        (new RoleSeeder())->run();
-        (new PermissionSeeder())->run();
+        (new RoleSeeder)->run();
+        (new PermissionSeeder)->run();
 
         $restaurant = Restaurant::firstOrCreate(
             ['code' => 'SEAFOOD-RESTO'],
@@ -63,10 +65,10 @@ class ReportingTest extends TestCase
         );
         $this->cashier->syncRoles(['cashier']);
 
-        if (!$this->owner->outlets()->where('outlets.id', $this->outlet->id)->exists()) {
+        if (! $this->owner->outlets()->where('outlets.id', $this->outlet->id)->exists()) {
             $this->owner->outlets()->attach($this->outlet->id);
         }
-        if (!$this->cashier->outlets()->where('outlets.id', $this->outlet->id)->exists()) {
+        if (! $this->cashier->outlets()->where('outlets.id', $this->outlet->id)->exists()) {
             $this->cashier->outlets()->attach($this->outlet->id);
         }
 
@@ -74,7 +76,7 @@ class ReportingTest extends TestCase
             ['outlet_id' => $this->outlet->id, 'number' => 'T-02'],
             ['status' => 'available']
         );
-        $this->table->update(['status' => \App\Enums\TableStatus::Available]);
+        $this->table->update(['status' => TableStatus::Available]);
 
         $station = KitchenStation::firstOrCreate(
             ['outlet_id' => $this->outlet->id, 'code' => 'MASAK'],
@@ -152,7 +154,7 @@ class ReportingTest extends TestCase
     public function test_sales_report(): void
     {
         $response = $this->actingAs($this->owner)
-            ->getJson('/api/v1/reports/sales?start_date=' . now()->subDays(7)->toDateString() . '&end_date=' . now()->toDateString());
+            ->getJson('/api/v1/reports/sales?start_date='.now()->subDays(7)->toDateString().'&end_date='.now()->toDateString());
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -268,4 +270,3 @@ class ReportingTest extends TestCase
             ->assertJsonPath('error', 'forbidden');
     }
 }
-

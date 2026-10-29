@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\Restaurant;
 use App\Models\Outlet;
+use App\Models\Restaurant;
+use Illuminate\Database\Seeder;
 
 class RestaurantSeeder extends Seeder
 {
@@ -16,13 +15,13 @@ class RestaurantSeeder extends Seeder
     {
         $restaurant = Restaurant::create([
             'name' => 'Seafood Bahari',
-            'code' => 'SBH'
+            'code' => 'SBH',
         ]);
 
         Outlet::create([
             'restaurant_id' => $restaurant->id,
             'name' => 'Outlet Utama',
-            'code' => 'MAIN'
+            'code' => 'MAIN',
         ]);
     }
 }

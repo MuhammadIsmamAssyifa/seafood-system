@@ -7,14 +7,12 @@ use App\Enums\PaymentStatus;
 use App\Enums\StockMovementType;
 use App\Enums\TableStatus;
 use App\Models\Ingredient;
-use App\Models\InventoryBatch;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTable;
 use App\Models\Payment;
 use App\Models\StockMovement;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ReportingService
 {
@@ -27,24 +25,32 @@ class ReportingService
         $startOfDay = $targetDate->copy()->startOfDay();
         $endOfDay = $targetDate->copy()->endOfDay();
 
-        // 1. Sales & Profit Today
-        $todayOrders = Order::query()
+        // 1. Sales & Profit Today (SQL Aggregation for High Performance)
+        $completedMetrics = Order::query()
             ->where('outlet_id', $outletId)
+            ->where('status', OrderStatus::Completed)
             ->whereBetween('created_at', [$startOfDay, $endOfDay])
-            ->get();
+            ->selectRaw('COALESCE(SUM(grand_total), 0) as revenue, COALESCE(SUM(total_cogs), 0) as cogs, COALESCE(SUM(gross_profit), 0) as profit, COUNT(*) as completed_count')
+            ->first();
 
-        $completedOrders = $todayOrders->where('status', OrderStatus::Completed);
-
-        $todayRevenue = round((float) $completedOrders->sum('grand_total'), 2);
-        $todayCogs = round((float) $completedOrders->sum('total_cogs'), 2);
-        $todayGrossProfit = round((float) $completedOrders->sum('gross_profit'), 2);
+        $todayRevenue = round((float) ($completedMetrics->revenue ?? 0), 2);
+        $todayCogs = round((float) ($completedMetrics->cogs ?? 0), 2);
+        $todayGrossProfit = round((float) ($completedMetrics->profit ?? 0), 2);
         $todayProfitMargin = $todayRevenue > 0
             ? round(($todayGrossProfit / $todayRevenue) * 100, 2)
             : 0.0;
 
         // 2. Orders Metrics
-        $totalOrdersToday = $todayOrders->count();
-        $completedOrdersCount = $completedOrders->count();
+        $totalOrdersMetrics = Order::query()
+            ->where('outlet_id', $outletId)
+            ->whereBetween('created_at', [$startOfDay, $endOfDay])
+            ->selectRaw('COUNT(*) as total_orders, COALESCE(SUM(guest_count), 0) as total_guests')
+            ->first();
+
+        $totalOrdersToday = (int) ($totalOrdersMetrics->total_orders ?? 0);
+        $completedOrdersCount = (int) ($completedMetrics->completed_count ?? 0);
+        $guestCountToday = (int) ($totalOrdersMetrics->total_guests ?? 0);
+
         $activeOrdersCount = Order::query()
             ->where('outlet_id', $outletId)
             ->whereIn('status', [
@@ -54,7 +60,6 @@ class ReportingService
                 OrderStatus::Ready,
             ])
             ->count();
-        $guestCountToday = (int) $todayOrders->sum('guest_count');
 
         // 3. Table Occupancy
         $totalTables = OrderTable::where('outlet_id', $outletId)->count();
@@ -75,6 +80,7 @@ class ReportingService
             return (float) ($item->total_stock ?? 0) <= 5.0;
         })->map(function ($item) {
             $unit = $item->unit instanceof \BackedEnum ? $item->unit->value : $item->unit;
+
             return [
                 'ingredient_id' => $item->id,
                 'name' => $item->name,
@@ -155,7 +161,7 @@ class ReportingService
         $spendPerGuest = $totalGuests > 0 ? round($netSales / $totalGuests, 2) : 0.0;
 
         // Daily Trend breakdown
-        $dailyTrends = $orders->groupBy(fn($order) => $order->created_at->toDateString())
+        $dailyTrends = $orders->groupBy(fn ($order) => $order->created_at->toDateString())
             ->map(function ($dayOrders, $date) {
                 $count = $dayOrders->count();
                 $gross = round((float) $dayOrders->sum('subtotal'), 2);
@@ -197,7 +203,7 @@ class ReportingService
         $end = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::today()->endOfDay();
 
         $payments = Payment::query()
-            ->whereHas('order', fn($q) => $q->where('outlet_id', $outletId))
+            ->whereHas('order', fn ($q) => $q->where('outlet_id', $outletId))
             ->where('status', PaymentStatus::Paid)
             ->whereBetween('paid_at', [$start, $end])
             ->with(['order.orderTable', 'createdBy'])
@@ -226,6 +232,7 @@ class ReportingService
         // List Transactions
         $transactions = $payments->map(function ($p) {
             $method = $p->method instanceof \BackedEnum ? $p->method->value : $p->method;
+
             return [
                 'id' => $p->id,
                 'order_id' => $p->order_id,
@@ -262,8 +269,8 @@ class ReportingService
         $items = OrderItem::query()
             ->whereHas('orderBatch.order', function ($q) use ($outletId, $start, $end) {
                 $q->where('outlet_id', $outletId)
-                  ->where('status', OrderStatus::Completed)
-                  ->whereBetween('created_at', [$start, $end]);
+                    ->where('status', OrderStatus::Completed)
+                    ->whereBetween('created_at', [$start, $end]);
             })
             ->with('menuVariant.menu')
             ->get();
@@ -327,7 +334,7 @@ class ReportingService
         $items = $ingredients->map(function ($ing) use (&$totalValuation, &$lowStockCount) {
             $batches = $ing->inventoryBatches;
             $stock = (float) $batches->sum('remaining_quantity');
-            $valuation = round((float) $batches->sum(fn($b) => (float) $b->remaining_quantity * (float) $b->cost_per_unit), 2);
+            $valuation = round((float) $batches->sum(fn ($b) => (float) $b->remaining_quantity * (float) $b->cost_per_unit), 2);
             $totalValuation += $valuation;
 
             $isLowStock = $stock <= 5.0;
@@ -429,4 +436,3 @@ class ReportingService
         ];
     }
 }
-

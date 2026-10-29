@@ -51,6 +51,7 @@ class AuditLogService
     public function logLogin(User $user, string $type = 'web'): AuditLog
     {
         $identifier = $user->email ?? $user->username ?? 'Unknown';
+
         return $this->log(
             action: 'login',
             description: "Pengguna {$user->name} ({$identifier}) berhasil login via {$type}.",
@@ -66,6 +67,7 @@ class AuditLogService
     public function logCreateOrder(Order $order): AuditLog
     {
         $tableNum = $order->orderTable?->number ?? '-';
+
         return $this->log(
             action: 'create_order',
             description: "Membuat pesanan baru #{$order->order_number} di Meja {$tableNum} (Tamu: {$order->guest_count}, Pelanggan: {$order->customer_name}).",
@@ -156,7 +158,7 @@ class AuditLogService
 
         return $this->log(
             action: 'price_change',
-            description: "Perubahan item {$item?->menu_name_snapshot} pada pesanan #{$order?->order_number}: Qty ({$change->old_quantity} -> {$change->new_quantity}), Harga (Rp " . number_format((float)$change->old_price, 0) . " -> Rp " . number_format((float)$change->new_price, 0) . "). Alasan: {$change->reason}",
+            description: "Perubahan item {$item?->menu_name_snapshot} pada pesanan #{$order?->order_number}: Qty ({$change->old_quantity} -> {$change->new_quantity}), Harga (Rp ".number_format((float) $change->old_price, 0).' -> Rp '.number_format((float) $change->new_price, 0)."). Alasan: {$change->reason}",
             auditable: $change,
             oldValues: [
                 'quantity' => (float) $change->old_quantity,
@@ -202,6 +204,7 @@ class AuditLogService
         ?array $newValues = null
     ): AuditLog {
         $identifier = $targetUser->email ?? $targetUser->username ?? 'Unknown';
+
         return $this->log(
             action: 'user_management',
             description: "Manajemen user: {$actionDesc} untuk pengguna {$targetUser->name} ({$identifier}).",
@@ -226,7 +229,7 @@ class AuditLogService
         $query = AuditLog::query()
             ->where(function ($q) use ($outletId) {
                 $q->where('outlet_id', $outletId)
-                  ->orWhereNull('outlet_id');
+                    ->orWhereNull('outlet_id');
             })
             ->with(['user', 'outlet'])
             ->latest();

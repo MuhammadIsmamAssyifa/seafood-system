@@ -27,7 +27,7 @@ class OrderResource extends JsonResource
             'grand_total' => (float) $this->grand_total,
             'total_cogs' => (float) $this->total_cogs,
             'gross_profit' => (float) $this->gross_profit,
-            'table' => $this->whenLoaded('orderTable', fn() => [
+            'table' => $this->whenLoaded('orderTable', fn () => [
                 'id' => $this->orderTable->id,
                 'number' => $this->orderTable->number,
             ], [

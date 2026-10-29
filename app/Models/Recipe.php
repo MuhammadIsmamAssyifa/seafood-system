@@ -31,4 +31,3 @@ class Recipe extends Model
         return $this->hasMany(RecipeItem::class);
     }
 }
-

@@ -43,4 +43,3 @@ class AuditLogController extends Controller
         return AuditLogResource::collection($logs);
     }
 }
-

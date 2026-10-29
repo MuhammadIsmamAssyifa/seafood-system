@@ -1,31 +1,35 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\OrderItemController;
-use App\Http\Controllers\Api\OrderBatchController;
-use App\Http\Controllers\Api\KitchenController;
 use App\Http\Controllers\Api\KitchenActionController;
-use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\KitchenController;
+use App\Http\Controllers\Api\OrderBatchController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderItemChangeController;
-use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\OrderItemController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfitReportController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Resources\UserResource;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
-    return new \App\Http\Resources\UserResource($request->user());
+    return new UserResource($request->user());
 })->middleware('auth:sanctum');
 
 Route::prefix('v1')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/staff-login', [AuthController::class, 'staffLogin']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/staff-login', [AuthController::class, 'staffLogin'])->middleware('throttle:login');
 });
 
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+
     // Dashboard Summary
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])
         ->middleware('permission:dashboard.view');
@@ -40,6 +44,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
     // Orders
     Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])
+            ->middleware('permission:order.view');
         Route::post('/', [OrderController::class, 'store'])
             ->middleware('permission:order.create');
         Route::get('/{order}', [OrderController::class, 'show'])

@@ -41,4 +41,3 @@ class ProfitReportController extends Controller
         return new OrderProfitResource($profit);
     }
 }
-
