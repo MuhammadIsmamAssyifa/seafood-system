@@ -38,4 +38,3 @@ class KdsBatchSubmitted implements ShouldBroadcastNow
         return (new OrderBatchResource($this->batch))->resolve();
     }
 }
-

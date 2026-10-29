@@ -46,4 +46,3 @@ class KdsItemChanged implements ShouldBroadcastNow
         ];
     }
 }
-
