@@ -143,4 +143,35 @@ class SecurityTest extends TestCase
 
         $reportRes->assertStatus(403);
     }
+
+    public function test_kitchen_role_cannot_access_owner_web_routes(): void
+    {
+        $this->actingAs($this->kitchen)->get('/dashboard')->assertStatus(403);
+        $this->actingAs($this->kitchen)->get('/reports')->assertStatus(403);
+        $this->actingAs($this->kitchen)->get('/users')->assertStatus(403);
+        $this->actingAs($this->kitchen)->get('/audit-logs')->assertStatus(403);
+        $this->actingAs($this->kitchen)->post('/inventory/stock', [
+            'ingredient_id' => 1,
+            'quantity' => 10,
+            'cost_per_unit' => 50000,
+        ])->assertStatus(403);
+    }
+
+    public function test_kitchen_role_cannot_login_to_web_portal(): void
+    {
+        $response = $this->post('/login', [
+            'login' => $this->kitchen->email,
+            'password' => 'secret123',
+        ]);
+
+        $response->assertSessionHasErrors('login');
+        $this->assertGuest();
+    }
+
+    public function test_kitchen_role_cannot_access_owner_api_endpoints(): void
+    {
+        $this->actingAs($this->kitchen)->getJson('/api/v1/dashboard/summary')->assertStatus(403);
+        $this->actingAs($this->kitchen)->getJson('/api/v1/audit-logs')->assertStatus(403);
+        $this->actingAs($this->kitchen)->getJson('/api/v1/reports/profit/summary')->assertStatus(403);
+    }
 }

@@ -140,7 +140,9 @@ class OrderItemChangeService
             }
 
             $freshChange = $change->fresh();
-            event(new KdsItemChanged($freshChange));
+            DB::afterCommit(function () use ($freshChange) {
+                event(new KdsItemChanged($freshChange));
+            });
 
             return $freshChange;
         });

@@ -17,7 +17,7 @@ class OrderController extends Controller
     ) {}
 
     /**
-     * Get paginated orders list with eager loading.
+     * Get paginated orders list with eager loading, search, and date filters.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -27,12 +27,28 @@ class OrderController extends Controller
         $orders = Order::query()
             ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId))
             ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
+            ->when($request->query('search'), function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('order_number', 'ILIKE', "%{$search}%")
+                        ->orWhere('customer_name', 'ILIKE', "%{$search}%");
+                });
+            })
+            ->when($request->query('date'), function ($q, $date) {
+                $q->whereDate('created_at', $date);
+            })
+            ->when($request->query('start_date'), function ($q, $start) {
+                $q->whereDate('created_at', '>=', $start);
+            })
+            ->when($request->query('end_date'), function ($q, $end) {
+                $q->whereDate('created_at', '<=', $end);
+            })
             ->with([
                 'orderTable',
                 'batches.items',
+                'payments',
             ])
             ->latest()
-            ->paginate($request->integer('per_page', 15));
+            ->paginate($request->integer('per_page', 20));
 
         return OrderResource::collection($orders);
     }

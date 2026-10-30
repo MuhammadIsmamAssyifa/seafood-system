@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\OrderItemController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfitReportController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\TableController;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])
         ->middleware('permission:dashboard.view');
 
+    // Tables
+    Route::prefix('tables')->group(function () {
+        Route::get('/', [TableController::class, 'index'])
+            ->middleware('permission:order.view|order.create');
+        Route::get('/{table}', [TableController::class, 'show'])
+            ->middleware('permission:order.view|order.create');
+    });
+
     // Catalog
     Route::prefix('catalog')->group(function () {
         Route::get('/menus', [CatalogController::class, 'menus'])
@@ -52,14 +61,24 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
             ->middleware('permission:order.view');
         Route::post('/{order}/items', [OrderItemController::class, 'store'])
             ->middleware('permission:order.create|order.update');
+        Route::get('/{order}/payments', [PaymentController::class, 'index'])
+            ->middleware('permission:order.view|payment.view');
         Route::post('/{order}/payments', [PaymentController::class, 'store'])
             ->middleware('permission:payment.create');
         Route::get('/{order}/payments/summary', [PaymentController::class, 'summary'])
             ->middleware('permission:order.view|payment.view');
+        Route::get('/{order}/payment-summary', [PaymentController::class, 'summary'])
+            ->middleware('permission:order.view|payment.view');
+        Route::get('/{order}/adjustments', [OrderItemChangeController::class, 'forOrder'])
+            ->middleware('permission:order.view|order.change');
     });
 
     // Order Item Changes (Customer Approval / Rejection)
     Route::prefix('order-item-changes')->group(function () {
+        Route::get('/', [OrderItemChangeController::class, 'index'])
+            ->middleware('permission:order.view|order.change');
+        Route::post('/', [OrderItemChangeController::class, 'store'])
+            ->middleware('permission:order.change');
         Route::patch('/{change}/approve', [OrderItemChangeController::class, 'approve'])
             ->middleware('permission:order.change|order.update');
         Route::patch('/{change}/reject', [OrderItemChangeController::class, 'reject'])
@@ -81,6 +100,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     // Order Batches
     Route::post('/order-batches/{orderBatch}/submit', [OrderBatchController::class, 'submit'])
         ->middleware('permission:order.create|order.update');
+    Route::delete('/order-batches/{orderBatch}', [OrderBatchController::class, 'destroy'])
+        ->middleware('permission:order.create|order.update');
 
     // Kitchen Display System (KDS)
     Route::prefix('kitchen')->middleware('permission:kitchen.view')->group(function () {
@@ -96,10 +117,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     });
 
     // Reporting & Analytics Suite (Phase 1 & Phase 2)
+    Route::get('/reports/dashboard', [DashboardController::class, 'summary'])
+        ->middleware('permission:dashboard.view');
+
     Route::prefix('reports')->middleware('permission:report.view')->group(function () {
         Route::get('/sales', [ReportController::class, 'sales']);
         Route::get('/payments', [ReportController::class, 'payments']);
         Route::get('/menu-sales', [ReportController::class, 'menuSales']);
+        Route::get('/top-menu', [ReportController::class, 'menuSales']);
         Route::get('/inventory', [ReportController::class, 'inventory']);
         Route::get('/stock-movements', [ReportController::class, 'stockMovements']);
         Route::get('/profit/summary', [ProfitReportController::class, 'summary']);

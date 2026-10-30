@@ -51,9 +51,9 @@ class OrderItemService
         |--------------------------------------------------------------------------
         */
 
-            if ($order->status !== OrderStatus::Draft) {
+            if (in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled], true)) {
                 throw new \DomainException(
-                    'Order yang sudah dikirim ke dapur tidak dapat diubah.'
+                    'Pesanan yang sudah selesai atau dibatalkan tidak dapat diubah.'
                 );
             }
 
@@ -128,9 +128,15 @@ class OrderItemService
             /** @var Order $order */
             $order = $batch->order()->lockForUpdate()->firstOrFail();
 
-            if ($order->status !== OrderStatus::Draft) {
+            if (in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled], true)) {
                 throw new \DomainException(
-                    'Order yang sudah dikirim ke dapur tidak dapat diubah.'
+                    'Pesanan yang sudah selesai atau dibatalkan tidak dapat diubah.'
+                );
+            }
+
+            if ($batch->status !== OrderBatchStatus::Waiting) {
+                throw new \DomainException(
+                    'Item yang sudah dikirim ke dapur tidak dapat diubah.'
                 );
             }
 
@@ -187,13 +193,24 @@ class OrderItemService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($order->status !== OrderStatus::Draft) {
+            if (in_array($order->status, [OrderStatus::Completed, OrderStatus::Cancelled], true)) {
                 throw new \DomainException(
-                    'Order yang sudah dikirim ke dapur tidak dapat diubah.'
+                    'Pesanan yang sudah selesai atau dibatalkan tidak dapat diubah.'
+                );
+            }
+
+            if ($batch->status !== OrderBatchStatus::Waiting) {
+                throw new \DomainException(
+                    'Item yang sudah dikirim ke dapur tidak dapat diubah.'
                 );
             }
 
             $item->delete();
+
+            // Auto clean: if the waiting batch has no items left, delete the batch
+            if ($batch->status === OrderBatchStatus::Waiting && $batch->items()->count() === 0) {
+                $batch->delete();
+            }
 
             $this->calculationService->recalculate($order);
 

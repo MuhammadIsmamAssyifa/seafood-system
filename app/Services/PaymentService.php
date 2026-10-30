@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Enums\OrderBatchStatus;
+use App\Enums\OrderItemStatus;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\TableStatus;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
@@ -20,19 +23,23 @@ class PaymentService
         array $data
     ): Payment {
         return DB::transaction(function () use ($order, $data) {
-            if ($order->status === OrderStatus::Completed) {
+            if ($order->status === OrderStatus::Cancelled) {
                 throw new \DomainException(
-                    'Order sudah selesai.'
+                    'Order telah dibatalkan.'
                 );
             }
 
-            $this->validateOrderCanBePaid($order);
-
-            $paidAmount = $order->payments()
+            $paidAmount = (float) $order->payments()
                 ->where('status', PaymentStatus::Paid)
                 ->sum('amount');
 
-            $remaining = $order->grand_total - $paidAmount;
+            $remaining = (float) $order->grand_total - $paidAmount;
+
+            if ($remaining <= 0) {
+                throw new \DomainException(
+                    'Order sudah selesai dan lunas.'
+                );
+            }
 
             if ($data['amount'] > $remaining) {
                 throw new \DomainException(
@@ -40,11 +47,26 @@ class PaymentService
                 );
             }
 
+            $cashReceived = isset($data['cash_received']) && $data['cash_received'] > 0
+                ? (float) $data['cash_received']
+                : null;
+            $changeAmount = isset($data['change_amount']) && $data['change_amount'] > 0
+                ? (float) $data['change_amount']
+                : null;
+
+            // Automatically compute change amount for cash payment if not supplied
+            $methodVal = $data['method'] instanceof PaymentMethod ? $data['method']->value : (string) $data['method'];
+            if ($methodVal === PaymentMethod::Cash->value && $cashReceived !== null && $cashReceived > $data['amount']) {
+                $changeAmount ??= round($cashReceived - (float) $data['amount'], 2);
+            }
+
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'method' => $data['method'],
                 'status' => PaymentStatus::Paid,
                 'amount' => $data['amount'],
+                'cash_received' => $cashReceived,
+                'change_amount' => $changeAmount,
                 'created_by' => auth()->id(),
                 'paid_at' => now(),
             ]);
@@ -75,30 +97,26 @@ class PaymentService
 
     private function checkOrderPaid(Order $order): void
     {
-        $paidAmount = $order->payments()
+        $paidAmount = (float) $order->payments()
             ->where('status', PaymentStatus::Paid)
             ->sum('amount');
 
-        if ($paidAmount >= $order->grand_total) {
-            $order->update([
-                'status' => OrderStatus::Completed,
-            ]);
-        }
-    }
-
-    private function validateOrderCanBePaid(Order $order): void
-    {
-        $unfinishedBatch = $order->batches()
-            ->whereNotIn('status', [
-                OrderBatchStatus::Ready,
-                OrderBatchStatus::Completed,
-            ])
-            ->exists();
-
-        if ($unfinishedBatch) {
-            throw new \DomainException(
-                'Masih ada pesanan yang belum selesai dari dapur.'
+        if ($paidAmount >= (float) $order->grand_total) {
+            $items = $order->items;
+            $allServed = $items->isNotEmpty() && $items->every(
+                fn ($item) => $item->status === OrderItemStatus::Served
             );
+
+            // If all items are served or order has no kitchen items, mark completed and free table
+            if ($allServed || $items->isEmpty()) {
+                $order->update([
+                    'status' => OrderStatus::Completed,
+                ]);
+
+                $order->orderTable?->update([
+                    'status' => TableStatus::Available,
+                ]);
+            }
         }
     }
 }

@@ -18,6 +18,11 @@ class CatalogController extends Controller
         $outlet = $request->user()->outlets()->first();
         $outletId = $outlet?->id ?? 1;
 
+        if ($request->boolean('refresh') || $request->has('fresh') || $request->header('Cache-Control') === 'no-cache') {
+            Cache::forget("catalog_menus_outlet_{$outletId}");
+            MenuResource::clearStockCache();
+        }
+
         $menus = Cache::remember("catalog_menus_outlet_{$outletId}", 300, function () use ($outletId) {
             return Menu::with([
                 'variants.cookingMethod',

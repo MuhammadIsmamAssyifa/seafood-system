@@ -18,6 +18,8 @@ class StorePaymentRequest extends FormRequest
         return [
             'method' => ['required', Rule::enum(PaymentMethod::class)],
             'amount' => ['required', 'numeric', 'min:1'],
+            'cash_received' => ['nullable', 'numeric', 'min:0'],
+            'change_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

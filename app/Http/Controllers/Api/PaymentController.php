@@ -15,6 +15,11 @@ class PaymentController extends Controller
         protected PaymentService $paymentService
     ) {}
 
+    public function index(Order $order)
+    {
+        return PaymentResource::collection($order->payments()->latest()->get());
+    }
+
     public function store(
         StorePaymentRequest $request,
         Order $order

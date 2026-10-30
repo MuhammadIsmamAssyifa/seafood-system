@@ -34,7 +34,9 @@ class KitchenService
             ]);
 
             $freshBatch = $batch->fresh();
-            event(new KdsBatchUpdated($freshBatch));
+            DB::afterCommit(function () use ($freshBatch) {
+                event(new KdsBatchUpdated($freshBatch));
+            });
 
             return $freshBatch;
         });
@@ -96,7 +98,9 @@ class KitchenService
             }
 
             $freshItem = $item->fresh();
-            event(new KdsItemUpdated($freshItem));
+            DB::afterCommit(function () use ($freshItem) {
+                event(new KdsItemUpdated($freshItem));
+            });
 
             return $freshItem;
         });
@@ -126,7 +130,9 @@ class KitchenService
             }
 
             $freshItem = $item->fresh();
-            event(new KdsItemUpdated($freshItem));
+            DB::afterCommit(function () use ($freshItem) {
+                event(new KdsItemUpdated($freshItem));
+            });
 
             return $freshItem;
         });
@@ -135,6 +141,18 @@ class KitchenService
     private function syncBatchStatus(OrderBatch $batch): void
     {
         $items = $batch->items;
+
+        if (
+            $items->every(
+                fn ($item) => $item->status === OrderItemStatus::Served
+            )
+        ) {
+            $batch->update([
+                'status' => OrderBatchStatus::Completed,
+            ]);
+
+            return;
+        }
 
         if (
             $items->every(
@@ -189,7 +207,9 @@ class KitchenService
             }
 
             $freshItem = $item->fresh();
-            event(new KdsItemUpdated($freshItem));
+            DB::afterCommit(function () use ($freshItem) {
+                event(new KdsItemUpdated($freshItem));
+            });
 
             return $freshItem;
         });

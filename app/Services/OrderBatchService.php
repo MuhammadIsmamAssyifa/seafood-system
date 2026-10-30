@@ -56,9 +56,31 @@ class OrderBatchService
             }
 
             $freshBatch = $batch->fresh();
-            event(new KdsBatchSubmitted($freshBatch));
+            DB::afterCommit(function () use ($freshBatch) {
+                event(new KdsBatchSubmitted($freshBatch));
+            });
 
             return $freshBatch;
+        });
+    }
+
+    public function delete(OrderBatch $batch): void
+    {
+        DB::transaction(function () use ($batch) {
+            if ($batch->status !== OrderBatchStatus::Waiting) {
+                throw new \DomainException(
+                    'Batch yang sudah dikirim ke dapur tidak dapat dihapus.'
+                );
+            }
+
+            $order = $batch->order;
+
+            $batch->items()->delete();
+            $batch->delete();
+
+            if ($order) {
+                app(OrderCalculationService::class)->recalculate($order);
+            }
         });
     }
 }

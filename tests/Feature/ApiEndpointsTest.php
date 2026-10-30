@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OrderStatus;
 use App\Enums\TableStatus;
 use App\Models\CookingMethod;
 use App\Models\Ingredient;
@@ -134,6 +135,9 @@ class ApiEndpointsTest extends TestCase
                         'id',
                         'name',
                         'type',
+                        'stock_status',
+                        'stock_quantity',
+                        'need_market_check',
                         'variants' => [
                             '*' => [
                                 'id',
@@ -143,11 +147,120 @@ class ApiEndpointsTest extends TestCase
                                 'ingredient',
                                 'station',
                                 'cooking_method',
+                                'stock_status',
+                                'stock_quantity',
+                                'need_market_check',
                             ],
                         ],
                     ],
                 ],
             ]);
+    }
+
+    public function test_catalog_inventory_awareness_stock_statuses(): void
+    {
+        // 1. Seafood menu with 0 stock -> need_market_check
+        $crabIngredient = Ingredient::firstOrCreate(
+            ['outlet_id' => $this->outlet->id, 'name' => 'Kepiting Super'],
+            ['unit' => 'kg', 'status' => 'active']
+        );
+        InventoryBatch::where('ingredient_id', $crabIngredient->id)->delete();
+
+        $station = KitchenStation::firstOrCreate(
+            ['outlet_id' => $this->outlet->id, 'code' => 'GRILL'],
+            ['name' => 'Grill Station', 'status' => 'active']
+        );
+
+        $crabMenu = Menu::firstOrCreate(
+            ['outlet_id' => $this->outlet->id, 'name' => 'Kepiting Saos'],
+            ['type' => 'seafood', 'status' => 'active']
+        );
+
+        MenuVariant::firstOrCreate(
+            ['outlet_id' => $this->outlet->id, 'name' => 'Kepiting Porsi'],
+            [
+                'menu_id' => $crabMenu->id,
+                'main_ingredient_id' => $crabIngredient->id,
+                'kitchen_station_id' => $station->id,
+                'price' => 80000,
+                'sales_unit' => 'portion',
+                'inventory_unit' => 'kg',
+                'conversion_rate' => 0.5,
+                'status' => 'active',
+            ]
+        );
+
+        // 2. Non-seafood menu with 0 stock -> out_of_stock
+        $teaIngredient = Ingredient::firstOrCreate(
+            ['outlet_id' => $this->outlet->id, 'name' => 'Teh Celup'],
+            ['unit' => 'pcs', 'status' => 'active']
+        );
+        InventoryBatch::where('ingredient_id', $teaIngredient->id)->delete();
+
+        $drinkMenu = Menu::firstOrCreate(
+            ['outlet_id' => $this->outlet->id, 'name' => 'Es Teh Manis'],
+            ['type' => 'drink', 'status' => 'active']
+        );
+
+        MenuVariant::firstOrCreate(
+            ['outlet_id' => $this->outlet->id, 'name' => 'Es Teh Manis'],
+            [
+                'menu_id' => $drinkMenu->id,
+                'main_ingredient_id' => $teaIngredient->id,
+                'kitchen_station_id' => $station->id,
+                'price' => 5000,
+                'sales_unit' => 'portion',
+                'inventory_unit' => 'pcs',
+                'conversion_rate' => 1,
+                'status' => 'active',
+            ]
+        );
+
+        \Illuminate\Support\Facades\Cache::flush();
+        \App\Http\Resources\MenuResource::clearStockCache();
+        $response = $this->actingAs($this->user)->getJson('/api/v1/catalog/menus?refresh=1');
+        $response->assertStatus(200);
+
+        $crabItem = collect($response->json('data'))->firstWhere('name', 'Kepiting Saos');
+        $this->assertNotNull($crabItem);
+        $this->assertEquals('need_market_check', $crabItem['stock_status']);
+        $this->assertTrue($crabItem['need_market_check']);
+
+        $drinkItem = collect($response->json('data'))->firstWhere('name', 'Es Teh Manis');
+        $this->assertNotNull($drinkItem);
+        $this->assertEquals('out_of_stock', $drinkItem['stock_status']);
+        $this->assertFalse($drinkItem['need_market_check']);
+
+        // 3. Add low stock (2.0) -> low_stock
+        app(\App\Services\InventoryService::class)->addStock([
+            'outlet_id' => $this->outlet->id,
+            'ingredient_id' => $crabIngredient->id,
+            'quantity' => 2.0,
+            'cost_per_unit' => 50000,
+        ]);
+
+        \Illuminate\Support\Facades\Cache::flush();
+        \App\Http\Resources\MenuResource::clearStockCache();
+        $responseLow = $this->actingAs($this->user)->getJson('/api/v1/catalog/menus?refresh=1');
+        $crabItemLow = collect($responseLow->json('data'))->firstWhere('name', 'Kepiting Saos');
+        $this->assertEquals('low_stock', $crabItemLow['stock_status']);
+        $this->assertFalse($crabItemLow['need_market_check']);
+
+        // 4. Add high stock (> 5 portions, 2.0 + 10.0 = 12.0 kg / 0.5 = 24 portions) -> available
+        app(\App\Services\InventoryService::class)->addStock([
+            'outlet_id' => $this->outlet->id,
+            'ingredient_id' => $crabIngredient->id,
+            'quantity' => 10.0,
+            'cost_per_unit' => 50000,
+        ]);
+
+        \Illuminate\Support\Facades\Cache::flush();
+        \App\Http\Resources\MenuResource::clearStockCache();
+        $responseAvail = $this->actingAs($this->user)->getJson('/api/v1/catalog/menus?refresh=1');
+        $crabItemAvail = collect($responseAvail->json('data'))->firstWhere('name', 'Kepiting Saos');
+        $this->assertEquals('available', $crabItemAvail['stock_status']);
+        $this->assertFalse($crabItemAvail['need_market_check']);
+        $this->assertEquals(24.0, $crabItemAvail['stock_quantity']);
     }
 
     public function test_catalog_stations_returns_resource(): void
@@ -353,6 +466,68 @@ class ApiEndpointsTest extends TestCase
             ]);
 
         $createOrderRes->assertStatus(201);
+    }
+
+    public function test_upfront_payment_while_order_is_cooking_and_cash_tendered(): void
+    {
+        $this->table->update(['status' => TableStatus::Available]);
+
+        // 1. Create order and item
+        $createOrderRes = $this->actingAs($this->user)
+            ->postJson('/api/v1/orders', [
+                'order_table_id' => $this->table->id,
+                'customer_name' => 'Bayar Langsung',
+                'guest_count' => 2,
+            ]);
+        $createOrderRes->assertStatus(201);
+        $orderId = $createOrderRes->json('data.id');
+
+        $this->actingAs($this->user)
+            ->postJson("/api/v1/orders/{$orderId}/items", [
+                'menu_variant_id' => $this->variant->id,
+                'quantity' => 1,
+            ])->assertStatus(200);
+
+        $order = Order::find($orderId);
+        $batch = $order->batches()->first();
+
+        // 2. Submit to kitchen and start cooking
+        $this->actingAs($this->user)->postJson("/api/v1/order-batches/{$batch->id}/submit")->assertStatus(200);
+        $this->actingAs($this->user)->patchJson("/api/v1/kitchen/batches/{$batch->id}/accept")->assertStatus(200);
+        $item = $order->items()->first();
+        $this->actingAs($this->user)->patchJson("/api/v1/kitchen/items/{$item->id}/prepare")->assertStatus(200);
+
+        $order->refresh();
+        $this->assertEquals(OrderStatus::Preparing, $order->status);
+
+        // 3. Customer wants to pay upfront immediately while food is still cooking
+        // Bill: 50,000, Cash tendered: 100,000, Expected change: 50,000
+        $payRes = $this->actingAs($this->user)
+            ->postJson("/api/v1/orders/{$orderId}/payments", [
+                'method' => 'cash',
+                'amount' => 50000,
+                'cash_received' => 100000,
+                'change_amount' => 50000,
+            ]);
+
+        $payRes->assertStatus(201)
+            ->assertJsonPath('data.amount', 50000)
+            ->assertJsonPath('data.cash_received', 100000)
+            ->assertJsonPath('data.change_amount', 50000);
+
+        // Order is paid, but kitchen is still cooking, so status should remain preparing and table occupied
+        $order->refresh();
+        $this->assertEquals(OrderStatus::Preparing, $order->status);
+        $this->assertEquals(TableStatus::Occupied, $this->table->fresh()->status);
+
+        // 4. Kitchen finishes cooking and serves food
+        $this->actingAs($this->user)->patchJson("/api/v1/kitchen/items/{$item->id}/ready")->assertStatus(200);
+        $this->actingAs($this->user)->patchJson("/api/v1/kitchen/items/{$item->id}/serve")->assertStatus(200);
+
+        // Now that food is served AND order was already paid, status must be Completed and table Available!
+        $order->refresh();
+        $this->assertEquals(OrderStatus::Completed, $order->status);
+        $this->assertEquals(TableStatus::Available, $this->table->fresh()->status);
     }
 
     public function test_fifo_costing_and_profit_calculation(): void

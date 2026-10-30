@@ -20,4 +20,13 @@ class OrderBatchController extends Controller
         return (new OrderBatchResource($batch->load(['items', 'order'])))
             ->additional(['message' => 'Pesanan berhasil dikirim ke dapur.']);
     }
+
+    public function destroy(OrderBatch $orderBatch)
+    {
+        $this->orderBatchService->delete($orderBatch);
+
+        return response()->json([
+            'message' => 'Batch berhasil dihapus.',
+        ]);
+    }
 }

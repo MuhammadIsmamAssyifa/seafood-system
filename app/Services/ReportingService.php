@@ -39,6 +39,10 @@ class ReportingService
         $todayProfitMargin = $todayRevenue > 0
             ? round(($todayGrossProfit / $todayRevenue) * 100, 2)
             : 0.0;
+        $completedOrdersCount = (int) ($completedMetrics->completed_count ?? 0);
+        $todayAvgTransaction = ($todayRevenue > 0 && $completedOrdersCount > 0)
+            ? round($todayRevenue / $completedOrdersCount, 2)
+            : 0.0;
 
         // 2. Orders Metrics
         $totalOrdersMetrics = Order::query()
@@ -48,7 +52,6 @@ class ReportingService
             ->first();
 
         $totalOrdersToday = (int) ($totalOrdersMetrics->total_orders ?? 0);
-        $completedOrdersCount = (int) ($completedMetrics->completed_count ?? 0);
         $guestCountToday = (int) ($totalOrdersMetrics->total_guests ?? 0);
 
         $activeOrdersCount = Order::query()
@@ -60,6 +63,48 @@ class ReportingService
                 OrderStatus::Ready,
             ])
             ->count();
+
+        $statusCounts = Order::query()
+            ->where('outlet_id', $outletId)
+            ->whereBetween('created_at', [$startOfDay, $endOfDay])
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->all();
+
+        // 2b. Payments Today
+        $paymentsToday = Payment::query()
+            ->whereHas('order', fn ($q) => $q->where('outlet_id', $outletId))
+            ->where('status', PaymentStatus::Paid)
+            ->whereBetween('paid_at', [$startOfDay, $endOfDay])
+            ->get();
+
+        $todayCash = round((float) $paymentsToday->filter(fn ($p) => ($p->method instanceof \BackedEnum ? $p->method->value : $p->method) === 'cash')->sum('amount'), 2);
+        $todayTransfer = round((float) $paymentsToday->filter(fn ($p) => ($p->method instanceof \BackedEnum ? $p->method->value : $p->method) === 'transfer')->sum('amount'), 2);
+        $todayQris = round((float) $paymentsToday->filter(fn ($p) => ($p->method instanceof \BackedEnum ? $p->method->value : $p->method) === 'qris')->sum('amount'), 2);
+        $todayCollected = round((float) $paymentsToday->sum('amount'), 2);
+
+        // 2c. Top Selling Today
+        $topSellingToday = OrderItem::query()
+            ->whereHas('orderBatch.order', function ($q) use ($outletId, $startOfDay, $endOfDay) {
+                $q->where('outlet_id', $outletId)
+                    ->where('status', OrderStatus::Completed)
+                    ->whereBetween('created_at', [$startOfDay, $endOfDay]);
+            })
+            ->selectRaw('menu_variant_id, menu_name_snapshot, variant_name_snapshot, sales_unit, SUM(quantity) as total_qty, SUM(subtotal) as total_rev')
+            ->groupBy('menu_variant_id', 'menu_name_snapshot', 'variant_name_snapshot', 'sales_unit')
+            ->orderByDesc('total_qty')
+            ->take(5)
+            ->get()
+            ->map(fn ($i) => [
+                'variant_id' => $i->menu_variant_id,
+                'menu_name' => $i->menu_name_snapshot,
+                'variant_name' => $i->variant_name_snapshot,
+                'sales_unit' => $i->sales_unit instanceof \BackedEnum ? $i->sales_unit->value : $i->sales_unit,
+                'quantity_sold' => (float) $i->total_qty,
+                'total_revenue' => (float) $i->total_rev,
+            ])
+            ->values();
 
         // 3. Table Occupancy
         $totalTables = OrderTable::where('outlet_id', $outletId)->count();
@@ -115,12 +160,27 @@ class ReportingService
                 'today_cogs' => $todayCogs,
                 'today_gross_profit' => $todayGrossProfit,
                 'today_profit_margin' => $todayProfitMargin,
+                'average_transaction' => $todayAvgTransaction,
             ],
             'orders' => [
                 'total_today' => $totalOrdersToday,
                 'completed_today' => $completedOrdersCount,
                 'active_orders' => $activeOrdersCount,
                 'guests_today' => $guestCountToday,
+                'status_breakdown' => [
+                    'draft' => (int) ($statusCounts['draft'] ?? 0),
+                    'submitted' => (int) ($statusCounts['submitted'] ?? 0),
+                    'preparing' => (int) ($statusCounts['preparing'] ?? 0),
+                    'ready' => (int) ($statusCounts['ready'] ?? 0),
+                    'completed' => (int) ($statusCounts['completed'] ?? 0),
+                    'cancelled' => (int) ($statusCounts['cancelled'] ?? 0),
+                ],
+            ],
+            'payments' => [
+                'today_cash' => $todayCash,
+                'today_transfer' => $todayTransfer,
+                'today_qris' => $todayQris,
+                'total_collected' => $todayCollected,
             ],
             'tables' => [
                 'total_tables' => $totalTables,
@@ -133,6 +193,7 @@ class ReportingService
                 'low_stock_items' => $lowStockItems,
             ],
             'recent_orders' => $recentOrders,
+            'top_selling_menus' => $topSellingToday,
         ];
     }
 

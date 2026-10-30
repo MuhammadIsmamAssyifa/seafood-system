@@ -17,6 +17,8 @@ class Payment extends Model
         'method',
         'status',
         'amount',
+        'cash_received',
+        'change_amount',
         'paid_at',
         'created_by',
     ];
@@ -25,6 +27,8 @@ class Payment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'cash_received' => 'decimal:2',
+            'change_amount' => 'decimal:2',
             'paid_at' => 'datetime',
             'status' => PaymentStatus::class,
             'method' => PaymentMethod::class,

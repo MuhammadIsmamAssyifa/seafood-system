@@ -15,6 +15,8 @@ class PaymentResource extends JsonResource
             'method' => $this->method,
             'status' => $this->status,
             'amount' => (float) $this->amount,
+            'cash_received' => $this->cash_received !== null ? (float) $this->cash_received : null,
+            'change_amount' => $this->change_amount !== null ? (float) $this->change_amount : null,
             'created_by' => $this->created_by,
             'paid_at' => $this->paid_at,
             'created_at' => $this->created_at,

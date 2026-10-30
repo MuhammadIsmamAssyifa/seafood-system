@@ -16,6 +16,7 @@ class StoreOrderItemChangeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'order_item_id' => ['sometimes', 'required', 'integer', 'exists:order_items,id'],
             'type' => ['required', Rule::enum(OrderItemChangeType::class)],
             'quantity' => ['nullable', 'numeric', 'min:0.001'],
             'price' => ['nullable', 'numeric', 'min:0'],
