@@ -100,10 +100,7 @@
                     :disabled="isBatchActionPending"
                     @click="$emit('ready-all')"
                 >
-                    <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>🍳 Selesai Masak Semua ({{ preparingCount }})</span>
+                    <span>Selesai Masak Semua</span>
                 </button>
 
                 <!-- 3. Sajikan Semua -->
@@ -114,10 +111,7 @@
                     :disabled="isBatchActionPending"
                     @click="$emit('serve-all')"
                 >
-                    <svg class="w-4 h-4 text-teal-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>🍽️ Sajikan Semua ({{ readyCount }})</span>
+                    <span>Sajikan Semua</span>
                 </button>
             </div>
         </div>

@@ -14,6 +14,9 @@ class Restaurant extends Model
         'name',
         'code',
         'status',
+        'phone',
+        'address',
+        'footer_message',
     ];
 
     protected function casts(): array

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\OrderItemController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfitReportController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\RestaurantController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ Route::get('/user', function (Request $request) {
 Route::prefix('v1')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('/staff-login', [AuthController::class, 'staffLogin'])->middleware('throttle:login');
+    Route::get('/restaurant-info', [RestaurantController::class, 'show']);
 });
 
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(function () {
@@ -33,6 +35,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+
+    // Restaurant & Receipt Settings
+    Route::get('/restaurant', [RestaurantController::class, 'show']);
+    Route::match(['put', 'patch'], '/restaurant', [RestaurantController::class, 'update']);
 
     // Dashboard Summary
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])

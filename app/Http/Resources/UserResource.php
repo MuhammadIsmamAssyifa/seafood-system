@@ -30,6 +30,14 @@ class UserResource extends JsonResource
             'role' => $user->getRoleNames()->first() ?? null,
             'roles' => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
+            'restaurant' => $user->restaurant ? [
+                'id' => $user->restaurant->id,
+                'name' => $user->restaurant->name,
+                'code' => $user->restaurant->code,
+                'phone' => $user->restaurant->phone,
+                'address' => $user->restaurant->address,
+                'footer_message' => $user->restaurant->footer_message,
+            ] : null,
         ];
     }
 }
