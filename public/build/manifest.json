@@ -1,6 +1,6 @@
 {
-  "_ErrorState-RVVRdJGz.js": {
-    "file": "assets/ErrorState-RVVRdJGz.js",
+  "_ErrorState-DgoJeONZ.js": {
+    "file": "assets/ErrorState-DgoJeONZ.js",
     "name": "ErrorState",
     "imports": [
       "resources/js/kitchen/main.js"
@@ -11,7 +11,7 @@
     "name": "index"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CkkfB9mg.css",
+    "file": "assets/app-BkZcNR6t.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -25,7 +25,7 @@
     ]
   },
   "resources/js/kitchen/main.js": {
-    "file": "assets/main-eIhIxxAE.js",
+    "file": "assets/main-CHYH7CNS.js",
     "name": "main",
     "src": "resources/js/kitchen/main.js",
     "isEntry": true,
@@ -40,18 +40,18 @@
     ]
   },
   "resources/js/kitchen/pages/Dashboard.vue": {
-    "file": "assets/Dashboard-CFwiReDM.js",
+    "file": "assets/Dashboard-Xg7LRwjb.js",
     "name": "Dashboard",
     "src": "resources/js/kitchen/pages/Dashboard.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/kitchen/main.js",
-      "_ErrorState-RVVRdJGz.js",
+      "_ErrorState-DgoJeONZ.js",
       "_index-DZgmwYj1.js"
     ]
   },
   "resources/js/kitchen/pages/Login.vue": {
-    "file": "assets/Login-7gI6KeQe.js",
+    "file": "assets/Login-CV5-xZY-.js",
     "name": "Login",
     "src": "resources/js/kitchen/pages/Login.vue",
     "isDynamicEntry": true,
@@ -61,18 +61,18 @@
     ]
   },
   "resources/js/kitchen/pages/OrderDetail.vue": {
-    "file": "assets/OrderDetail-UeypiGUh.js",
+    "file": "assets/OrderDetail-h1V4ZKEE.js",
     "name": "OrderDetail",
     "src": "resources/js/kitchen/pages/OrderDetail.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/kitchen/main.js",
-      "_ErrorState-RVVRdJGz.js",
+      "_ErrorState-DgoJeONZ.js",
       "_index-DZgmwYj1.js"
     ]
   },
   "resources/js/kitchen/pages/Unauthorized.vue": {
-    "file": "assets/Unauthorized-BJyrL7LL.js",
+    "file": "assets/Unauthorized-CcZ-35Kz.js",
     "name": "Unauthorized",
     "src": "resources/js/kitchen/pages/Unauthorized.vue",
     "isDynamicEntry": true,
