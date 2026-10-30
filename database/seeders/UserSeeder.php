@@ -43,7 +43,7 @@ class UserSeeder extends Seeder
             'restaurant_id' => $restaurant->id,
             'name' => 'Kasir 01',
             'username' => 'kasir01',
-            'pin_hash' => Hash::make('1234'),
+            'pin_hash' => Hash::make('123456'),
             'status' => 'active',
         ]);
 

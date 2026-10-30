@@ -66,8 +66,9 @@
                             {{ item.quantity }}x
                         </span>
                         <div class="min-w-0 flex-1">
-                            <p class="font-semibold text-slate-200 leading-snug truncate" :title="item.menu_name || item.name">
-                                {{ item.menu_name || item.name }}
+                            <p class="font-semibold text-slate-200 leading-snug truncate" :title="itemTitle(item)">
+                                <span>{{ item.menu_name || item.name }}</span>
+                                <span v-if="item.variant_name && item.variant_name !== (item.menu_name || item.name)" class="text-slate-400 font-normal text-[11px]"> ({{ item.variant_name }})</span>
                             </p>
                             <p v-if="item.notes || item.note" class="text-[11px] text-amber-400 italic truncate" :title="item.notes || item.note">
                                 "{{ item.notes || item.note }}"
@@ -166,6 +167,12 @@ onMounted(() => {
 onUnmounted(() => {
     if (timer) clearInterval(timer);
 });
+
+const itemTitle = (item) => {
+    const base = item?.menu_name || item?.name || '';
+    const variant = item?.variant_name && item.variant_name !== base ? ` (${item.variant_name})` : '';
+    return `${base}${variant}`;
+};
 
 const orderNumber = computed(() => {
     return props.order.order_number || props.order.order?.order_number || `ORD-${props.order.id}`;

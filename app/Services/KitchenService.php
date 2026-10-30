@@ -42,6 +42,61 @@ class KitchenService
         });
     }
 
+    public function prepareAllItems(OrderBatch $batch): OrderBatch
+    {
+        return DB::transaction(function () use ($batch) {
+            if ($batch->status === OrderBatchStatus::Sent) {
+                $batch->update(['status' => OrderBatchStatus::Cooking]);
+            }
+
+            $items = $batch->items()->where('status', OrderItemStatus::Waiting)->get();
+            foreach ($items as $item) {
+                $this->prepareItem($item);
+            }
+
+            $freshBatch = $batch->fresh(['items.menuVariant.cookingMethod', 'items.menuVariant.kitchenStation', 'items.changes', 'order.orderTable']);
+            DB::afterCommit(function () use ($freshBatch) {
+                event(new KdsBatchUpdated($freshBatch));
+            });
+
+            return $freshBatch;
+        });
+    }
+
+    public function readyAllItems(OrderBatch $batch): OrderBatch
+    {
+        return DB::transaction(function () use ($batch) {
+            $items = $batch->items()->where('status', OrderItemStatus::Preparing)->get();
+            foreach ($items as $item) {
+                $this->readyItem($item);
+            }
+
+            $freshBatch = $batch->fresh(['items.menuVariant.cookingMethod', 'items.menuVariant.kitchenStation', 'items.changes', 'order.orderTable']);
+            DB::afterCommit(function () use ($freshBatch) {
+                event(new KdsBatchUpdated($freshBatch));
+            });
+
+            return $freshBatch;
+        });
+    }
+
+    public function serveAllItems(OrderBatch $batch): OrderBatch
+    {
+        return DB::transaction(function () use ($batch) {
+            $items = $batch->items()->where('status', OrderItemStatus::Ready)->get();
+            foreach ($items as $item) {
+                $this->serveItem($item);
+            }
+
+            $freshBatch = $batch->fresh(['items.menuVariant.cookingMethod', 'items.menuVariant.kitchenStation', 'items.changes', 'order.orderTable']);
+            DB::afterCommit(function () use ($freshBatch) {
+                event(new KdsBatchUpdated($freshBatch));
+            });
+
+            return $freshBatch;
+        });
+    }
+
     public function prepareItem(OrderItem $item): OrderItem
     {
         return DB::transaction(function () use ($item) {

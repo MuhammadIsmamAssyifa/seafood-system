@@ -95,7 +95,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::delete('/{orderItem}', [OrderItemController::class, 'destroy'])
             ->middleware('permission:order.update');
         Route::post('/{orderItem}/changes', [OrderItemChangeController::class, 'store'])
-            ->middleware('permission:order.change');
+            ->middleware('permission:order.change|kitchen.update');
         Route::post('/{orderItem}/replace', [OrderItemChangeController::class, 'replace'])
             ->middleware('permission:order.change');
     });
@@ -111,6 +111,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::get('/orders', [KitchenController::class, 'index']);
         Route::get('/orders/{order}', [KitchenController::class, 'show']);
         Route::patch('/batches/{batch}/accept', [KitchenActionController::class, 'acceptBatch'])
+            ->middleware('permission:kitchen.update');
+        Route::patch('/batches/{batch}/prepare-all', [KitchenActionController::class, 'prepareAll'])
+            ->middleware('permission:kitchen.update');
+        Route::patch('/batches/{batch}/ready-all', [KitchenActionController::class, 'readyAll'])
+            ->middleware('permission:kitchen.update');
+        Route::patch('/batches/{batch}/serve-all', [KitchenActionController::class, 'serveAll'])
             ->middleware('permission:kitchen.update');
         Route::patch('/items/{item}/prepare', [KitchenActionController::class, 'prepareItem'])
             ->middleware('permission:kitchen.update');

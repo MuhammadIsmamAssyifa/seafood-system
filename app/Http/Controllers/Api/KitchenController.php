@@ -67,7 +67,7 @@ class KitchenController extends Controller
         $batches = $query
             ->with([
                 'order.orderTable',
-                'items',
+                'items.changes',
             ])
             ->orderBy('created_at', 'asc')
             ->get();
@@ -95,6 +95,7 @@ class KitchenController extends Controller
                     'order.orderTable',
                     'items.menuVariant.cookingMethod',
                     'items.menuVariant.kitchenStation',
+                    'items.changes',
                 ])
                 ->find($id);
 

@@ -38,6 +38,16 @@ class OrderItemResource extends JsonResource
             'cogs' => (float) $this->cogs,
             'gross_profit' => (float) $this->gross_profit,
             'status' => $this->status,
+            'pending_change' => $this->whenLoaded('changes', function () {
+                $pending = $this->changes->firstWhere('status', \App\Enums\OrderItemChangeStatus::PendingCustomer);
+                return $pending ? [
+                    'id' => $pending->id,
+                    'type' => $pending->type instanceof \BackedEnum ? $pending->type->value : $pending->type,
+                    'status' => $pending->status instanceof \BackedEnum ? $pending->status->value : $pending->status,
+                    'reason' => $pending->reason,
+                    'created_at' => $pending->created_at?->toISOString(),
+                ] : null;
+            }),
             'note' => $this->note ?? null,
             'notes' => $this->notes ?? null,
         ];

@@ -393,6 +393,112 @@ export const useKitchenStore = defineStore('kds-kitchen', {
         },
 
         /**
+         * Mark all waiting items in a batch as cooking
+         */
+        async prepareAll(batchId) {
+            const key = `batch-prepare-all-${batchId}`;
+            if (this.isActionPending(key)) return;
+
+            this.setActionPending(key, true);
+            try {
+                const res = await kitchenActionService.prepareAll(batchId);
+                const updatedBatch = res.data || res;
+
+                if (this.selectedOrder && this.selectedOrder.id === batchId) {
+                    this.selectedOrder = { ...this.selectedOrder, ...updatedBatch };
+                }
+                await this.fetchOrders(true);
+                return { success: true, data: updatedBatch };
+            } catch (err) {
+                const message = err.customMessage || err.response?.data?.message || 'Gagal memulai masak semua item.';
+                return { success: false, message };
+            } finally {
+                this.setActionPending(key, false);
+            }
+        },
+
+        /**
+         * Mark all preparing items in a batch as ready
+         */
+        async readyAll(batchId) {
+            const key = `batch-ready-all-${batchId}`;
+            if (this.isActionPending(key)) return;
+
+            this.setActionPending(key, true);
+            try {
+                const res = await kitchenActionService.readyAll(batchId);
+                const updatedBatch = res.data || res;
+
+                if (this.selectedOrder && this.selectedOrder.id === batchId) {
+                    this.selectedOrder = { ...this.selectedOrder, ...updatedBatch };
+                }
+                await this.fetchOrders(true);
+                return { success: true, data: updatedBatch };
+            } catch (err) {
+                const message = err.customMessage || err.response?.data?.message || 'Gagal menyelesaikan masak semua item.';
+                return { success: false, message };
+            } finally {
+                this.setActionPending(key, false);
+            }
+        },
+
+        /**
+         * Mark all ready items in a batch as served
+         */
+        async serveAll(batchId) {
+            const key = `batch-serve-all-${batchId}`;
+            if (this.isActionPending(key)) return;
+
+            this.setActionPending(key, true);
+            try {
+                const res = await kitchenActionService.serveAll(batchId);
+                const updatedBatch = res.data || res;
+
+                if (this.selectedOrder && this.selectedOrder.id === batchId) {
+                    this.selectedOrder = { ...this.selectedOrder, ...updatedBatch };
+                }
+                await this.fetchOrders(true);
+                return { success: true, data: updatedBatch };
+            } catch (err) {
+                const message = err.customMessage || err.response?.data?.message || 'Gagal menyajikan semua item.';
+                return { success: false, message };
+            } finally {
+                this.setActionPending(key, false);
+            }
+        },
+
+        /**
+         * Report an item issue (out of stock / weight adjustment) to cashier
+         */
+        async reportItemIssue(itemId, data) {
+            const key = `report-${itemId}`;
+            if (this.isActionPending(key)) return;
+
+            this.setActionPending(key, true);
+            try {
+                const res = await kitchenActionService.reportItemIssue(itemId, data);
+                // Mark item locally as having pending change
+                if (this.selectedOrder && Array.isArray(this.selectedOrder.items)) {
+                    const item = this.selectedOrder.items.find((i) => i.id === itemId);
+                    if (item) {
+                        item.pending_change = {
+                            id: res.data?.id || res.id,
+                            type: data.type,
+                            status: 'pending_customer',
+                            reason: data.reason,
+                        };
+                    }
+                }
+                return { success: true, data: res.data || res };
+            } catch (err) {
+                const message = err.customMessage || err.response?.data?.message || 'Gagal mengirim laporan ke kasir.';
+                return { success: false, message };
+            } finally {
+                this.setActionPending(key, false);
+            }
+        },
+
+        /**
          * Helper to update item status locally in selectedOrder and queue
          */
         syncItemState(itemId, newStatus) {

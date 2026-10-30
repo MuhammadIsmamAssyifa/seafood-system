@@ -22,6 +22,27 @@ class KitchenActionController extends Controller
         return new OrderBatchResource($updatedBatch->load(['items', 'order']));
     }
 
+    public function prepareAll(OrderBatch $batch): OrderBatchResource
+    {
+        $updatedBatch = $this->kitchenService->prepareAllItems($batch);
+
+        return new OrderBatchResource($updatedBatch);
+    }
+
+    public function readyAll(OrderBatch $batch): OrderBatchResource
+    {
+        $updatedBatch = $this->kitchenService->readyAllItems($batch);
+
+        return new OrderBatchResource($updatedBatch);
+    }
+
+    public function serveAll(OrderBatch $batch): OrderBatchResource
+    {
+        $updatedBatch = $this->kitchenService->serveAllItems($batch);
+
+        return new OrderBatchResource($updatedBatch);
+    }
+
     public function prepareItem(OrderItem $item): OrderItemResource
     {
         $updatedItem = $this->kitchenService->prepareItem($item);

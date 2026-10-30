@@ -22,11 +22,11 @@
                     <!-- Menu Info -->
                     <div>
                         <h4 class="text-base sm:text-lg font-bold text-white leading-snug">
-                            {{ item.name || item.menu_name }}
+                            <span>{{ item.name || item.menu_name }}</span>
+                            <span v-if="item.variant_name && item.variant_name !== (item.name || item.menu_name)" class="text-slate-400 font-normal text-sm ml-1">
+                                ({{ item.variant_name }})
+                            </span>
                         </h4>
-                        <p v-if="item.variant_name && item.variant_name !== item.menu_name" class="text-xs text-slate-400 font-medium">
-                            {{ item.variant_name }}
-                        </p>
                     </div>
                 </div>
 
@@ -73,19 +73,45 @@
             </div>
         </div>
 
+        <!-- If Pending Change / Adjustment Request to Cashier -->
+        <div v-if="hasPendingChange" class="mt-4 p-3 rounded-xl bg-amber-950/40 border border-amber-800/60 flex items-start gap-2.5">
+            <span class="text-amber-400 animate-pulse text-base">⏳</span>
+            <div class="text-xs">
+                <p class="font-bold text-amber-300">Menunggu Konfirmasi Kasir</p>
+                <p class="text-slate-300 mt-0.5">{{ item.pending_change.reason || 'Laporan ketidaksesuaian stok/bobot' }}</p>
+            </div>
+        </div>
+
         <!-- Workflow Action Row (Sprint 05) -->
-        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
             <span class="text-xs text-slate-400 font-medium">Aksi Kitchen:</span>
 
-            <!-- If Waiting: Mulai Masak (prepare) -->
-            <WorkflowAction
-                v-if="itemStatus === 'waiting'"
-                action-type="prepare"
-                :target-id="item.id"
-                :target-name="item.name || item.menu_name"
-                label="Mulai Masak"
-                size="sm"
-            />
+            <!-- If Waiting & Has Pending Change: Waiting confirmation -->
+            <span v-if="itemStatus === 'waiting' && hasPendingChange" class="text-xs text-amber-400 font-semibold italic">
+                Terkunci (menunggu kasir)
+            </span>
+
+            <!-- If Waiting & No Pending Change: Mulai Masak (prepare) or Lapor Kasir -->
+            <div v-else-if="itemStatus === 'waiting'" class="flex items-center gap-2">
+                <button
+                    type="button"
+                    class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95"
+                    title="Lapor jika stok/ukuran habis di dapur atau pasar ikan"
+                    @click="$emit('report-issue', item)"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Lapor Kasir</span>
+                </button>
+                <WorkflowAction
+                    action-type="prepare"
+                    :target-id="item.id"
+                    :target-name="item.name || item.menu_name"
+                    label="Mulai Masak"
+                    size="sm"
+                />
+            </div>
 
             <!-- If Preparing/Cooking: Selesai Masak (ready) -->
             <WorkflowAction
@@ -133,6 +159,12 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+});
+
+defineEmits(['report-issue']);
+
+const hasPendingChange = computed(() => {
+    return Boolean(props.item.pending_change);
 });
 
 const unit = computed(() => {

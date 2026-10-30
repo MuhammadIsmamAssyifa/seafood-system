@@ -68,11 +68,30 @@ class InventoryService
         ) {
             $available = $this->getAvailableStock($ingredient->id);
 
+            // Jika stok tidak mencukupi, otomatis catat pengambilan dari Pasar Ikan / Live Vendor
+            // agar operasional dapur tidak terhenti
             if ($available < $quantity) {
-                $unit = $ingredient->unit instanceof \BackedEnum ? $ingredient->unit->value : $ingredient->unit;
-                throw new \DomainException(
-                    "Stok {$ingredient->name} tidak mencukupi. Dibutuhkan {$quantity} {$unit}, tersedia {$available} {$unit}."
-                );
+                $deficit = $quantity - $available;
+                $latestBatch = InventoryBatch::where('ingredient_id', $ingredient->id)
+                    ->latest('received_at')
+                    ->first();
+                $costPerUnit = $latestBatch ? (float) $latestBatch->cost_per_unit : 0;
+
+                $outletId = $reference?->orderBatch?->order?->outlet_id
+                    ?? $reference?->order?->outlet_id
+                    ?? $latestBatch?->outlet_id
+                    ?? \App\Models\Outlet::first()?->id;
+
+                if ($outletId) {
+                    $this->addStock([
+                        'outlet_id' => $outletId,
+                        'ingredient_id' => $ingredient->id,
+                        'quantity' => $deficit,
+                        'cost_per_unit' => $costPerUnit,
+                        'source' => 'Pasar Ikan (Pengambilan Langsung)',
+                        'note' => 'Pengambilan langsung dari pasar ikan saat proses memasak pesanan',
+                    ]);
+                }
             }
 
             $batches = InventoryBatch::query()

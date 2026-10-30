@@ -16,6 +16,7 @@
                 v-for="item in items"
                 :key="item.id"
                 :item="item"
+                @report-issue="$emit('report-issue', $event)"
             />
         </div>
 
@@ -28,6 +29,8 @@
 
 <script setup>
 import OrderItemCard from './OrderItemCard.vue';
+
+defineEmits(['report-issue']);
 
 defineProps({
     items: {

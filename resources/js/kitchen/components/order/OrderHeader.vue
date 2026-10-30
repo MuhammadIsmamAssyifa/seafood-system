@@ -28,30 +28,30 @@
         </div>
 
         <!-- Main Details Banner -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-950/70 border border-slate-800/80 rounded-xl">
-            <!-- Order Number & Table -->
-            <div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 p-4 bg-slate-950/70 border border-slate-800/80 rounded-xl">
+            <!-- Order Number (Expanded width: lg:col-span-5) -->
+            <div class="lg:col-span-5 min-w-0">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nomor Order</p>
-                <div class="flex items-baseline gap-2 mt-0.5">
-                    <span class="text-xl sm:text-2xl font-black text-white font-mono tracking-tight">
+                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                    <span class="text-base sm:text-lg xl:text-xl font-black text-white font-mono tracking-tight break-all select-all">
                         #{{ orderNumber }}
                     </span>
-                    <span v-if="order.batch_number" class="text-xs font-bold px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">
+                    <span v-if="order.batch_number" class="text-xs font-bold px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 shrink-0">
                         Batch {{ order.batch_number }}
                     </span>
                 </div>
             </div>
 
-            <!-- Table Number -->
-            <div>
+            <!-- Table Number (lg:col-span-2) -->
+            <div class="lg:col-span-2">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Meja</p>
                 <p class="text-xl sm:text-2xl font-black text-blue-400 mt-0.5">
                     Meja {{ tableNumber }}
                 </p>
             </div>
 
-            <!-- Customer & Guests -->
-            <div>
+            <!-- Customer & Guests (lg:col-span-3) -->
+            <div class="lg:col-span-3 min-w-0">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pelanggan</p>
                 <p class="text-base sm:text-lg font-bold text-slate-100 mt-0.5 truncate">
                     {{ customerName }}
@@ -61,10 +61,10 @@
                 </p>
             </div>
 
-            <!-- Time & Elapsed -->
-            <div>
+            <!-- Time & Elapsed (lg:col-span-2) -->
+            <div class="lg:col-span-2">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Waktu Masuk</p>
-                <p class="text-base sm:text-lg font-bold text-slate-100 font-mono mt-0.5">
+                <p class="text-sm sm:text-base font-bold text-slate-100 font-mono mt-0.5">
                     {{ orderTime }}
                 </p>
                 <p class="text-xs text-emerald-400 font-mono font-bold mt-0.5">
@@ -72,11 +72,61 @@
                 </p>
             </div>
         </div>
+
+        <!-- Batch Quick Actions: Sekali klik untuk proses semua item -->
+        <div v-if="order.items && order.items.length > 0" class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+                <span class="font-bold text-slate-300">Aksi Masal:</span>
+                <span>Proses seluruh item di batch ini secara bersamaan</span>
+            </div>
+
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <!-- 1. Mulai Masak Semua -->
+                <button
+                    v-if="waitingCount > 0"
+                    type="button"
+                    class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-900/30 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                    :disabled="isBatchActionPending"
+                    @click="$emit('prepare-all')"
+                >
+                    <span>Mulai Masak Semua</span>
+                </button>
+
+                <!-- 2. Selesai Masak Semua -->
+                <button
+                    v-if="preparingCount > 0"
+                    type="button"
+                    class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-950/30 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                    :disabled="isBatchActionPending"
+                    @click="$emit('ready-all')"
+                >
+                    <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>🍳 Selesai Masak Semua ({{ preparingCount }})</span>
+                </button>
+
+                <!-- 3. Sajikan Semua -->
+                <button
+                    v-if="readyCount > 0"
+                    type="button"
+                    class="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-950/30 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                    :disabled="isBatchActionPending"
+                    @click="$emit('serve-all')"
+                >
+                    <svg class="w-4 h-4 text-teal-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>🍽️ Sajikan Semua ({{ readyCount }})</span>
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { useKitchenStore } from '@/kitchen/stores/kitchen.store';
 import OrderBadge from '@/kitchen/components/dashboard/OrderBadge.vue';
 import WorkflowAction from '@/kitchen/components/workflow/WorkflowAction.vue';
 import { formatTime, formatElapsedTime } from '@/shared/utils/formatter';
@@ -88,7 +138,30 @@ const props = defineProps({
     },
 });
 
-defineEmits(['back', 'accepted']);
+defineEmits(['back', 'accepted', 'prepare-all', 'ready-all', 'serve-all']);
+
+const kitchenStore = useKitchenStore();
+
+const isBatchActionPending = computed(() => {
+    const id = props.order?.id;
+    return (
+        kitchenStore.isActionPending(`batch-prepare-all-${id}`) ||
+        kitchenStore.isActionPending(`batch-ready-all-${id}`) ||
+        kitchenStore.isActionPending(`batch-serve-all-${id}`)
+    );
+});
+
+const waitingCount = computed(() => {
+    return (props.order.items || []).filter((i) => (i.status || '').toLowerCase() === 'waiting').length;
+});
+
+const preparingCount = computed(() => {
+    return (props.order.items || []).filter((i) => ['cooking', 'preparing'].includes((i.status || '').toLowerCase())).length;
+});
+
+const readyCount = computed(() => {
+    return (props.order.items || []).filter((i) => (i.status || '').toLowerCase() === 'ready').length;
+});
 
 const orderNumber = computed(() => {
     return props.order.order_number || props.order.id || '-';
