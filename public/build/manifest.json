@@ -1,6 +1,6 @@
 {
-  "_ErrorState-BBbiD1MY.js": {
-    "file": "assets/ErrorState-BBbiD1MY.js",
+  "_ErrorState-D8CYSwLq.js": {
+    "file": "assets/ErrorState-D8CYSwLq.js",
     "name": "ErrorState",
     "imports": [
       "resources/js/kitchen/main.js"
@@ -25,7 +25,7 @@
     ]
   },
   "resources/js/kitchen/main.js": {
-    "file": "assets/main-BehE0hfz.js",
+    "file": "assets/main-CBGlxJtK.js",
     "name": "main",
     "src": "resources/js/kitchen/main.js",
     "isEntry": true,
@@ -40,18 +40,18 @@
     ]
   },
   "resources/js/kitchen/pages/Dashboard.vue": {
-    "file": "assets/Dashboard-BtUV6fBl.js",
+    "file": "assets/Dashboard-BfjzHGp1.js",
     "name": "Dashboard",
     "src": "resources/js/kitchen/pages/Dashboard.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/kitchen/main.js",
-      "_ErrorState-BBbiD1MY.js",
+      "_ErrorState-D8CYSwLq.js",
       "_index-DZgmwYj1.js"
     ]
   },
   "resources/js/kitchen/pages/Login.vue": {
-    "file": "assets/Login-C_yhqQJL.js",
+    "file": "assets/Login-CSmRlNrG.js",
     "name": "Login",
     "src": "resources/js/kitchen/pages/Login.vue",
     "isDynamicEntry": true,
@@ -61,18 +61,18 @@
     ]
   },
   "resources/js/kitchen/pages/OrderDetail.vue": {
-    "file": "assets/OrderDetail-CR1TNac4.js",
+    "file": "assets/OrderDetail-Bl2x_mA6.js",
     "name": "OrderDetail",
     "src": "resources/js/kitchen/pages/OrderDetail.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/kitchen/main.js",
-      "_ErrorState-BBbiD1MY.js",
+      "_ErrorState-D8CYSwLq.js",
       "_index-DZgmwYj1.js"
     ]
   },
   "resources/js/kitchen/pages/Unauthorized.vue": {
-    "file": "assets/Unauthorized-BZDeNbtW.js",
+    "file": "assets/Unauthorized-CaVv1QKe.js",
     "name": "Unauthorized",
     "src": "resources/js/kitchen/pages/Unauthorized.vue",
     "isDynamicEntry": true,

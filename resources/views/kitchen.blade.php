@@ -19,7 +19,7 @@
             pusherHost: "{{ env('PUSHER_HOST') }}",
             pusherPort: "{{ env('PUSHER_PORT', 443) }}",
             pusherScheme: "{{ env('PUSHER_SCHEME', 'https') }}",
-            kdsChannel: "{{ config('broadcasting.connections.pusher.kds_channel') ?? env('PUSHER_KDS_CHANNEL', 'pos-seafood-kds-development') }}"
+            kdsChannel: "{{ \App\Events\KdsBatchSubmitted::channelName() }}"
         };
     </script>
 

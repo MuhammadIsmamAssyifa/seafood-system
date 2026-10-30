@@ -15,11 +15,11 @@ export const initEcho = () => {
     }
 
     const config = (typeof window !== 'undefined' && window.__KDS_CONFIG__) || {};
-    const key = import.meta.env.VITE_PUSHER_APP_KEY || config.pusherKey;
-    const cluster = import.meta.env.VITE_PUSHER_APP_CLUSTER || config.pusherCluster || 'ap1';
-    const host = import.meta.env.VITE_PUSHER_HOST || config.pusherHost;
-    const port = import.meta.env.VITE_PUSHER_PORT || config.pusherPort;
-    const scheme = import.meta.env.VITE_PUSHER_SCHEME || config.pusherScheme || 'https';
+    const key = config.pusherKey || import.meta.env.VITE_PUSHER_APP_KEY;
+    const cluster = config.pusherCluster || import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap1';
+    const host = config.pusherHost || import.meta.env.VITE_PUSHER_HOST;
+    const port = config.pusherPort || import.meta.env.VITE_PUSHER_PORT;
+    const scheme = config.pusherScheme || import.meta.env.VITE_PUSHER_SCHEME || 'https';
 
     if (!key) {
         console.warn('[Pusher] Pusher Key is missing. Realtime updates might be disabled.');
@@ -83,7 +83,7 @@ export const onConnectionChange = (callback) => {
 
 export const getKdsChannelName = () => {
     const config = (typeof window !== 'undefined' && window.__KDS_CONFIG__) || {};
-    return import.meta.env.VITE_PUSHER_KDS_CHANNEL || config.kdsChannel || 'pos-seafood-kds-development';
+    return config.kdsChannel || import.meta.env.VITE_PUSHER_KDS_CHANNEL || 'pos-seafood-kds-development';
 };
 
 export default {

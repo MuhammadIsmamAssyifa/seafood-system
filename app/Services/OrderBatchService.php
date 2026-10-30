@@ -31,6 +31,7 @@ class OrderBatchService
 
             $batch->update([
                 'status' => OrderBatchStatus::Sent,
+                'sent_to_kitchen_at' => now(),
             ]);
 
             /*

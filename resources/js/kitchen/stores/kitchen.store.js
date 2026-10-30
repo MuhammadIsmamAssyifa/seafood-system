@@ -181,11 +181,12 @@ export const useKitchenStore = defineStore('kds-kitchen', {
                 this.orders = this.orders.filter((o) => o.id !== batch.id);
                 return;
             }
+            const itemToInsert = { ...batch, _optimisticAt: Date.now() };
             const index = this.orders.findIndex((o) => o.id === batch.id);
             if (index >= 0) {
-                this.orders[index] = { ...this.orders[index], ...batch };
+                this.orders[index] = { ...this.orders[index], ...itemToInsert };
             } else {
-                this.orders.unshift(batch);
+                this.orders.unshift(itemToInsert);
             }
         },
 
@@ -237,11 +238,23 @@ export const useKitchenStore = defineStore('kds-kitchen', {
                 const data = res.data || res;
                 const list = Array.isArray(data) ? data : [];
                 // Exclude any draft or unsubmitted order/batch
-                this.orders = list.filter((order) => {
+                const freshOrders = list.filter((order) => {
                     const orderStatus = (order.order?.status || '').toLowerCase();
                     const batchStatus = (order.status || '').toLowerCase();
                     return orderStatus !== 'draft' && batchStatus !== 'waiting' && batchStatus !== 'draft';
                 });
+
+                // Preserve any active batch that was recently added via WebSocket event
+                // to prevent flicker or race condition if the server response is momentarily stale
+                const freshIds = new Set(freshOrders.map((o) => o.id));
+                const recentlyAdded = this.orders.filter((o) => {
+                    const s = (o.status || '').toLowerCase();
+                    const notInFresh = !freshIds.has(o.id);
+                    const isActive = ['sent', 'waiting', 'cooking', 'preparing', 'ready'].includes(s);
+                    return notInFresh && isActive && o._optimisticAt && (Date.now() - o._optimisticAt < 30000);
+                });
+
+                this.orders = [...recentlyAdded, ...freshOrders];
                 this.lastUpdated = new Date();
             } catch (err) {
                 this.error = err.customMessage || err.response?.data?.message || 'Gagal mengambil data kitchen.';

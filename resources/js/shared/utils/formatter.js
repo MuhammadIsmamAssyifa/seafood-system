@@ -20,6 +20,7 @@ export const formatTime = (date, withSeconds = false) => {
     if (isNaN(d.getTime())) return '-';
 
     return d.toLocaleTimeString('id-ID', {
+        timeZone: 'Asia/Jakarta',
         hour: '2-digit',
         minute: '2-digit',
         ...(withSeconds ? { second: '2-digit' } : {}),
@@ -28,7 +29,7 @@ export const formatTime = (date, withSeconds = false) => {
 };
 
 /**
- * Format full date and time
+ * Format full date and time (WIB / Indonesia)
  */
 export const formatDateTime = (date) => {
     if (!date) return '-';
@@ -36,6 +37,7 @@ export const formatDateTime = (date) => {
     if (isNaN(d.getTime())) return '-';
 
     return d.toLocaleDateString('id-ID', {
+        timeZone: 'Asia/Jakarta',
         day: 'numeric',
         month: 'short',
         year: 'numeric',
