@@ -60,6 +60,21 @@
                         Jejak Audit
                     </a>
                 @endif
+
+                <div class="pt-4 mt-4 border-t border-slate-800">
+                    <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Layar Operasional</div>
+                    <a href="{{ url('/kitchen') }}" target="_blank" class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 group">
+                        <span class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Kitchen Display (KDS)
+                        </span>
+                        <svg class="w-4 h-4 text-amber-400/60 group-hover:text-amber-300 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                </div>
             </nav>
             <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
                 Seafood RMS v1.0 &bull; Production Ready

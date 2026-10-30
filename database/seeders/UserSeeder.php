@@ -59,7 +59,7 @@ class UserSeeder extends Seeder
             'restaurant_id' => $restaurant->id,
             'name' => 'Kepala Kitchen',
             'username' => 'kitchen01',
-            'pin_hash' => Hash::make('1234'),
+            'pin_hash' => Hash::make('123456'),
             'status' => 'active',
 
         ]);
@@ -76,7 +76,7 @@ class UserSeeder extends Seeder
             'restaurant_id' => $restaurant->id,
             'name' => 'Kitchen Staff',
             'username' => 'kitchen02',
-            'pin_hash' => Hash::make('1234'),
+            'pin_hash' => Hash::make('123456'),
             'status' => 'active',
         ]);
 

@@ -28,6 +28,9 @@ Route::prefix('v1')->group(function () {
 });
 
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+    Route::get('/me', function (Request $request) {
+        return new UserResource($request->user());
+    });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 
@@ -106,6 +109,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     // Kitchen Display System (KDS)
     Route::prefix('kitchen')->middleware('permission:kitchen.view')->group(function () {
         Route::get('/orders', [KitchenController::class, 'index']);
+        Route::get('/orders/{order}', [KitchenController::class, 'show']);
         Route::patch('/batches/{batch}/accept', [KitchenActionController::class, 'acceptBatch'])
             ->middleware('permission:kitchen.update');
         Route::patch('/items/{item}/prepare', [KitchenActionController::class, 'prepareItem'])

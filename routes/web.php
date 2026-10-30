@@ -42,3 +42,9 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:report.view|user.manage')
         ->name('dashboard.audit_logs');
 });
+
+// Kitchen Display System (KDS) Vue SPA Entry Point
+Route::view('/kitchen/{any?}', 'kitchen')
+    ->where('any', '.*')
+    ->name('kitchen.app');
+

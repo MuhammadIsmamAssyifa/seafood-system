@@ -27,7 +27,9 @@ class UserResource extends JsonResource
             'email' => $user->email,
             'username' => $user->username,
             'status' => $user->status,
+            'role' => $user->getRoleNames()->first() ?? null,
             'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
         ];
     }
 }
