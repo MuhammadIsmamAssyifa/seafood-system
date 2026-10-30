@@ -1,0 +1,84 @@
+{
+  "_ErrorState-BBbiD1MY.js": {
+    "file": "assets/ErrorState-BBbiD1MY.js",
+    "name": "ErrorState",
+    "imports": [
+      "resources/js/kitchen/main.js"
+    ]
+  },
+  "_index-DZgmwYj1.js": {
+    "file": "assets/index-DZgmwYj1.js",
+    "name": "index"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-C_GKykRh.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-Dn3luYct.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "_index-DZgmwYj1.js"
+    ]
+  },
+  "resources/js/kitchen/main.js": {
+    "file": "assets/main-BehE0hfz.js",
+    "name": "main",
+    "src": "resources/js/kitchen/main.js",
+    "isEntry": true,
+    "imports": [
+      "_index-DZgmwYj1.js"
+    ],
+    "dynamicImports": [
+      "resources/js/kitchen/pages/Login.vue",
+      "resources/js/kitchen/pages/Dashboard.vue",
+      "resources/js/kitchen/pages/OrderDetail.vue",
+      "resources/js/kitchen/pages/Unauthorized.vue"
+    ]
+  },
+  "resources/js/kitchen/pages/Dashboard.vue": {
+    "file": "assets/Dashboard-BtUV6fBl.js",
+    "name": "Dashboard",
+    "src": "resources/js/kitchen/pages/Dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/kitchen/main.js",
+      "_ErrorState-BBbiD1MY.js",
+      "_index-DZgmwYj1.js"
+    ]
+  },
+  "resources/js/kitchen/pages/Login.vue": {
+    "file": "assets/Login-C_yhqQJL.js",
+    "name": "Login",
+    "src": "resources/js/kitchen/pages/Login.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/kitchen/main.js",
+      "_index-DZgmwYj1.js"
+    ]
+  },
+  "resources/js/kitchen/pages/OrderDetail.vue": {
+    "file": "assets/OrderDetail-CR1TNac4.js",
+    "name": "OrderDetail",
+    "src": "resources/js/kitchen/pages/OrderDetail.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/kitchen/main.js",
+      "_ErrorState-BBbiD1MY.js",
+      "_index-DZgmwYj1.js"
+    ]
+  },
+  "resources/js/kitchen/pages/Unauthorized.vue": {
+    "file": "assets/Unauthorized-BZDeNbtW.js",
+    "name": "Unauthorized",
+    "src": "resources/js/kitchen/pages/Unauthorized.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/kitchen/main.js",
+      "_index-DZgmwYj1.js"
+    ]
+  }
+}
