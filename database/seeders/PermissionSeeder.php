@@ -14,9 +14,17 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
-            // User Management
+            // User & Employee Management
             'user.view',
             'user.manage',
+            'employee.view',
+            'employee.create',
+            'employee.update',
+            'employee.manage',
+
+            // Role & Permission Management
+            'role.view',
+            'role.manage',
 
             // Menu & Catalog
             'menu.view',
@@ -37,14 +45,21 @@ class PermissionSeeder extends Seeder
             'payment.view',
             'payment.create',
 
-            // Inventory
+            // Inventory & Waste
             'inventory.view',
             'inventory.manage',
             'inventory.adjust',
+            'waste.view',
+            'waste.manage',
 
             // Dashboard & Reporting
             'dashboard.view',
             'report.view',
+
+            // Audit & System Settings (Sprint 11 & 12)
+            'audit.view',
+            'settings.view',
+            'settings.update',
         ];
 
         foreach ($permissions as $permission) {
@@ -70,6 +85,11 @@ class PermissionSeeder extends Seeder
         $adminPermissions = [
             'user.view',
             'user.manage',
+            'employee.view',
+            'employee.create',
+            'employee.update',
+            'employee.manage',
+            'role.view',
             'menu.view',
             'menu.manage',
             'order.view',
@@ -84,8 +104,13 @@ class PermissionSeeder extends Seeder
             'inventory.view',
             'inventory.manage',
             'inventory.adjust',
+            'waste.view',
+            'waste.manage',
             'dashboard.view',
             'report.view',
+            'audit.view',
+            'settings.view',
+            'settings.update',
         ];
         $admin?->syncPermissions($adminPermissions);
 

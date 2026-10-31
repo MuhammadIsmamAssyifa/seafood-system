@@ -11,7 +11,7 @@ class RestaurantSettingsTest extends TestCase
 {
     public function test_can_fetch_restaurant_receipt_info(): void
     {
-        $restaurant = Restaurant::firstOrCreate(
+        $restaurant = Restaurant::updateOrCreate(
             ['code' => 'SBH'],
             [
                 'name' => 'SEAFOOD RESTO POS',

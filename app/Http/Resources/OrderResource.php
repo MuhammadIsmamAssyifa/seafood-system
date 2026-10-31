@@ -36,6 +36,18 @@ class OrderResource extends JsonResource
             ]),
             'batches' => OrderBatchResource::collection($this->whenLoaded('batches')),
             'payments' => PaymentResource::collection($this->whenLoaded('payments')),
+            'created_by' => $this->whenLoaded('createdBy', fn () => [
+                'id' => $this->createdBy->id,
+                'name' => $this->createdBy->name,
+            ]),
+            'status_histories' => $this->whenLoaded('statusHistories', fn () => $this->statusHistories->map(fn ($h) => [
+                'id' => $h->id,
+                'from_status' => $h->from_status,
+                'status' => $h->status,
+                'note' => $h->note,
+                'changed_by' => $h->changedBy?->name,
+                'created_at' => $h->created_at,
+            ])),
             'created_at' => $this->created_at,
         ];
     }

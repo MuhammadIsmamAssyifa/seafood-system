@@ -155,7 +155,7 @@ class AuditLogTest extends TestCase
 
         $ingredient = Ingredient::firstOrCreate(
             ['outlet_id' => $this->outlet->id, 'name' => 'Kepiting Bakau AL'],
-            ['unit' => IngredientUnit::Kg, 'cost_per_unit' => 120000, 'current_stock' => 10]
+            ['unit' => IngredientUnit::Kg]
         );
 
         $inventoryService = app(InventoryService::class);

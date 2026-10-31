@@ -217,6 +217,9 @@ class ReportingService
         $grossSales = round((float) $orders->sum('subtotal'), 2);
         $totalDiscounts = round((float) $orders->sum('discount'), 2);
         $netSales = round((float) $orders->sum('grand_total'), 2);
+        $totalCogs = round((float) $orders->sum('total_cogs'), 2);
+        $totalProfit = round((float) $orders->sum('gross_profit'), 2);
+        $profitMargin = $netSales > 0 ? round(($totalProfit / $netSales) * 100, 2) : 0.0;
 
         $aov = $totalOrders > 0 ? round($netSales / $totalOrders, 2) : 0.0;
         $spendPerGuest = $totalGuests > 0 ? round($netSales / $totalGuests, 2) : 0.0;
@@ -228,6 +231,7 @@ class ReportingService
                 $gross = round((float) $dayOrders->sum('subtotal'), 2);
                 $discount = round((float) $dayOrders->sum('discount'), 2);
                 $net = round((float) $dayOrders->sum('grand_total'), 2);
+                $profit = round((float) $dayOrders->sum('gross_profit'), 2);
 
                 return [
                     'date' => $date,
@@ -235,8 +239,51 @@ class ReportingService
                     'gross_sales' => $gross,
                     'discounts' => $discount,
                     'net_sales' => $net,
+                    'gross_profit' => $profit,
                 ];
             })->values();
+
+        // Comparison with previous period
+        $daysDiff = max(1, $start->diffInDays($end) + 1);
+        $prevStart = $start->copy()->subDays($daysDiff);
+        $prevEnd = $start->copy()->subSecond();
+
+        $prevOrders = Order::query()
+            ->where('outlet_id', $outletId)
+            ->whereBetween('created_at', [$prevStart, $prevEnd])
+            ->where('status', OrderStatus::Completed)
+            ->get();
+
+        $prevNetSales = round((float) $prevOrders->sum('grand_total'), 2);
+        $prevOrdersCount = $prevOrders->count();
+        $salesGrowth = $prevNetSales > 0
+            ? round((($netSales - $prevNetSales) / $prevNetSales) * 100, 2)
+            : ($netSales > 0 ? 100.0 : 0.0);
+        $ordersGrowth = $prevOrdersCount > 0
+            ? round((($totalOrders - $prevOrdersCount) / $prevOrdersCount) * 100, 2)
+            : ($totalOrders > 0 ? 100.0 : 0.0);
+
+        // Top 10 menu performance in period
+        $topMenus = OrderItem::query()
+            ->whereHas('orderBatch.order', function ($q) use ($outletId, $start, $end) {
+                $q->where('outlet_id', $outletId)
+                    ->where('status', OrderStatus::Completed)
+                    ->whereBetween('created_at', [$start, $end]);
+            })
+            ->selectRaw('menu_name_snapshot, variant_name_snapshot, sales_unit, SUM(quantity) as total_qty, SUM(subtotal) as total_rev, SUM(gross_profit) as total_profit')
+            ->groupBy('menu_name_snapshot', 'variant_name_snapshot', 'sales_unit')
+            ->orderByDesc('total_rev')
+            ->take(10)
+            ->get()
+            ->map(fn ($i) => [
+                'name' => $i->menu_name_snapshot,
+                'variant' => $i->variant_name_snapshot,
+                'unit' => $i->sales_unit instanceof \BackedEnum ? $i->sales_unit->value : $i->sales_unit,
+                'quantity' => (float) $i->total_qty,
+                'revenue' => (float) $i->total_rev,
+                'profit' => (float) $i->total_profit,
+            ])
+            ->values();
 
         return [
             'outlet_id' => $outletId,
@@ -248,10 +295,23 @@ class ReportingService
                 'gross_sales' => $grossSales,
                 'total_discounts' => $totalDiscounts,
                 'net_sales' => $netSales,
+                'total_sales' => $netSales,
+                'total_cogs' => $totalCogs,
+                'gross_profit' => $totalProfit,
+                'profit_margin' => $profitMargin,
                 'average_order_value' => $aov,
                 'average_spend_per_guest' => $spendPerGuest,
             ],
+            'comparison' => [
+                'previous_start_date' => $prevStart->toDateString(),
+                'previous_end_date' => $prevEnd->toDateString(),
+                'previous_net_sales' => $prevNetSales,
+                'previous_orders_count' => $prevOrdersCount,
+                'sales_growth' => $salesGrowth,
+                'orders_growth' => $ordersGrowth,
+            ],
             'daily_trends' => $dailyTrends,
+            'top_menus' => $topMenus,
         ];
     }
 

@@ -25,6 +25,7 @@ class AuditLogResource extends JsonResource
                 'username' => $this->user->username,
             ] : null,
             'action' => $this->action,
+            'module' => $this->module,
             'description' => $this->description,
             'auditable_type' => $this->auditable_type,
             'auditable_id' => $this->auditable_id,

@@ -80,9 +80,38 @@ class KitchenController extends Controller
         $outlet = $request->user()->outlets()->first();
         $outletId = $outlet?->id;
 
-        // Try finding by OrderBatch ID first (only non-draft, submitted batches)
         $batch = null;
-        if (is_numeric($id)) {
+        $order = null;
+
+        // 1. Try finding by Order ID or Order Number
+        $rawOrder = Order::query()
+            ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId))
+            ->where(function ($q) use ($id) {
+                if (is_numeric($id)) {
+                    $q->where('id', $id);
+                } else {
+                    $q->where('order_number', $id);
+                }
+            })
+            ->with([
+                'orderTable',
+                'batches.items.menuVariant.cookingMethod',
+                'batches.items.menuVariant.kitchenStation',
+            ])
+            ->first();
+
+        if ($rawOrder) {
+            // Kitchen cannot view draft or cancelled orders
+            if (in_array($rawOrder->status, [OrderStatus::Draft, OrderStatus::Cancelled], true)) {
+                return response()->json([
+                    'message' => 'Order tidak ditemukan.',
+                ], 404);
+            }
+            $order = $rawOrder;
+        }
+
+        // 2. If not found by Order, try finding by OrderBatch ID (only non-draft, submitted batches)
+        if (! $order && is_numeric($id)) {
             $batch = OrderBatch::query()
                 ->when($outletId, function ($q) use ($outletId) {
                     $q->whereHas('order', fn ($sub) => $sub->where('outlet_id', $outletId));
@@ -102,26 +131,6 @@ class KitchenController extends Controller
             if ($batch) {
                 $order = $batch->order;
             }
-        }
-
-        // If not found by batch, find by Order ID or Order Number (must not be draft)
-        if (! $batch) {
-            $order = Order::query()
-                ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId))
-                ->whereNotIn('status', [OrderStatus::Draft, OrderStatus::Cancelled])
-                ->where(function ($q) use ($id) {
-                    if (is_numeric($id)) {
-                        $q->where('id', $id);
-                    } else {
-                        $q->where('order_number', $id);
-                    }
-                })
-                ->with([
-                    'orderTable',
-                    'batches.items.menuVariant.cookingMethod',
-                    'batches.items.menuVariant.kitchenStation',
-                ])
-                ->first();
         }
 
         if (! $order && ! $batch) {

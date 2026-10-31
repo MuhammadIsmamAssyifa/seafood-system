@@ -16,6 +16,7 @@
     "dependencies": {
         "@vitejs/plugin-vue": "^6.0.10",
         "chart.js": "^4.6.1",
+        "dayjs": "^1.11.23",
         "laravel-echo": "^2.6.3",
         "lucide-vue-next": "^1.0.0",
         "pinia": "^2.3.1",

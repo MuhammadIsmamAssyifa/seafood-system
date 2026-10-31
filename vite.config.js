@@ -11,6 +11,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/kitchen/main.js',
+                'resources/js/admin/app.js',
             ],
             refresh: true,
         }),

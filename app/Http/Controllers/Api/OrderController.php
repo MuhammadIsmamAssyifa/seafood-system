@@ -67,8 +67,11 @@ class OrderController extends Controller
     public function show(Order $order): OrderResource
     {
         $order->load([
-            'batches.items.menuVariant',
+            'batches.items.menuVariant.menu',
             'orderTable',
+            'payments.createdBy',
+            'statusHistories.changedBy',
+            'createdBy',
         ]);
 
         return new OrderResource($order);

@@ -48,3 +48,8 @@ Route::view('/kitchen/{any?}', 'kitchen')
     ->where('any', '.*')
     ->name('kitchen.app');
 
+// Web Admin / Owner Dashboard Vue SPA Entry Point
+Route::view('/admin/{any?}', 'admin')
+    ->where('any', '.*')
+    ->name('admin.app');
+

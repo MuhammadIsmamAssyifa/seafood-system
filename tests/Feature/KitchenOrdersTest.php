@@ -104,6 +104,8 @@ class KitchenOrdersTest extends TestCase
                 'status' => 'active',
             ]
         );
+
+        Order::where('outlet_id', $this->outlet->id)->delete();
     }
 
     public function test_kitchen_staff_can_fetch_orders_queue_with_expected_structure(): void

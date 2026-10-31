@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\KitchenActionController;
 use App\Http\Controllers\Api\KitchenController;
 use App\Http\Controllers\Api\OrderBatchController;
@@ -11,10 +12,14 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderItemChangeController;
 use App\Http\Controllers\Api\OrderItemController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\ProfitReportController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RestaurantController;
+use App\Http\Controllers\Api\RolePermissionController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\TableController;
+use App\Http\Controllers\Api\WasteController;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,9 +45,56 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     Route::get('/restaurant', [RestaurantController::class, 'show']);
     Route::match(['put', 'patch'], '/restaurant', [RestaurantController::class, 'update']);
 
-    // Dashboard Summary
+    // Dashboard Summary & Overview
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])
         ->middleware('permission:dashboard.view');
+    Route::get('/dashboard/overview', [DashboardController::class, 'summary'])
+        ->middleware('permission:dashboard.view');
+
+    // Inventory & Batch Cost
+    Route::prefix('inventory')->middleware('permission:inventory.view|inventory.manage')->group(function () {
+        Route::get('/', [InventoryController::class, 'index']);
+        Route::get('/movements', [InventoryController::class, 'movements']);
+        Route::post('/adjustments', [InventoryController::class, 'adjust'])
+            ->middleware('permission:inventory.adjust|inventory.manage');
+        Route::get('/cost', [InventoryController::class, 'costSummary']);
+        Route::get('/cost/{ingredient}', [InventoryController::class, 'costDetail']);
+        Route::get('/{ingredient}', [InventoryController::class, 'show']);
+    });
+
+    // Waste Management (Sprint 08)
+    Route::prefix('waste')->middleware('permission:inventory.manage')->group(function () {
+        Route::get('/summary', [WasteController::class, 'summary']);
+        Route::get('/', [WasteController::class, 'index']);
+        Route::post('/', [WasteController::class, 'store']);
+        Route::get('/{id}', [WasteController::class, 'show']);
+    });
+
+    // Employee Management (Sprint 09)
+    Route::prefix('employees')->middleware('permission:user.view|employee.view|user.manage|employee.manage')->group(function () {
+        Route::get('/meta/options', [EmployeeController::class, 'metaOptions']);
+        Route::get('/', [EmployeeController::class, 'index']);
+        Route::post('/', [EmployeeController::class, 'store'])
+            ->middleware('permission:user.manage|employee.create|employee.manage');
+        Route::get('/{id}', [EmployeeController::class, 'show']);
+        Route::put('/{id}', [EmployeeController::class, 'update'])
+            ->middleware('permission:user.manage|employee.update|employee.manage');
+        Route::patch('/{id}/status', [EmployeeController::class, 'updateStatus'])
+            ->middleware('permission:user.manage|employee.update|employee.manage');
+        Route::patch('/{id}/outlets', [EmployeeController::class, 'assignOutlets'])
+            ->middleware('permission:user.manage|employee.update|employee.manage');
+    });
+
+    // Authorization & Permission Management (Sprint 10)
+    Route::prefix('roles')->middleware('permission:role.view|user.manage|role.manage')->group(function () {
+        Route::get('/permissions', [RolePermissionController::class, 'permissions']);
+        Route::get('/matrix', [RolePermissionController::class, 'matrix']);
+        Route::get('/', [RolePermissionController::class, 'index']);
+        Route::post('/', [RolePermissionController::class, 'store'])
+            ->middleware('permission:role.manage');
+        Route::put('/{id}', [RolePermissionController::class, 'update'])
+            ->middleware('permission:role.manage');
+    });
 
     // Tables
     Route::prefix('tables')->group(function () {
@@ -147,7 +199,18 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::get('/orders/{order}/profit', [ProfitReportController::class, 'orderProfit']);
     });
 
-    // Audit Logs (Phase 4)
-    Route::get('/audit-logs', [AuditLogController::class, 'index'])
-        ->middleware('permission:report.view|user.manage');
+    // Audit Logs (Sprint 11)
+    Route::prefix('audit-logs')->middleware('permission:audit.view|report.view|user.manage')->group(function () {
+        Route::get('/summary', [AuditLogController::class, 'summary']);
+        Route::get('/', [AuditLogController::class, 'index']);
+        Route::get('/{id}', [AuditLogController::class, 'show']);
+    });
+
+    // System Settings (Sprint 12)
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [SettingController::class, 'index'])
+            ->middleware('permission:settings.view|user.manage');
+        Route::put('/', [SettingController::class, 'update'])
+            ->middleware('permission:settings.update|user.manage');
+    });
 });

@@ -25,7 +25,8 @@ class AuditLogService
         ?array $oldValues = null,
         ?array $newValues = null,
         ?int $userId = null,
-        ?int $outletId = null
+        ?int $outletId = null,
+        ?string $module = null
     ): AuditLog {
         $user = auth()->user();
         $effectiveUserId = $userId ?? $user?->id;
@@ -35,6 +36,7 @@ class AuditLogService
             'outlet_id' => $effectiveOutletId,
             'user_id' => $effectiveUserId,
             'action' => $action,
+            'module' => $module,
             'description' => $description,
             'auditable_type' => $auditable ? get_class($auditable) : null,
             'auditable_id' => $auditable?->getKey(),
@@ -224,7 +226,9 @@ class AuditLogService
         ?int $userId = null,
         ?string $startDate = null,
         ?string $endDate = null,
-        int $perPage = 15
+        int $perPage = 15,
+        ?string $module = null,
+        ?string $search = null
     ): LengthAwarePaginator {
         $query = AuditLog::query()
             ->where(function ($q) use ($outletId) {
@@ -242,6 +246,49 @@ class AuditLogService
             $query->where('user_id', $userId);
         }
 
+        if ($module) {
+            $moduleLower = strtolower($module);
+            $query->where(function ($q) use ($module, $moduleLower) {
+                $q->where('module', 'ILIKE', "%{$module}%")
+                    ->orWhere(function ($sub) use ($moduleLower) {
+                        if ($moduleLower === 'order') {
+                            $sub->where('action', 'LIKE', '%order%');
+                        } elseif ($moduleLower === 'inventory') {
+                            $sub->where(function ($i) {
+                                $i->where('action', 'LIKE', '%stock%')
+                                    ->orWhere('action', 'LIKE', '%inventory%')
+                                    ->orWhere('action', 'LIKE', '%waste%');
+                            });
+                        } elseif ($moduleLower === 'menu') {
+                            $sub->where('action', 'LIKE', '%menu%');
+                        } elseif ($moduleLower === 'employee' || $moduleLower === 'user') {
+                            $sub->where(function ($u) {
+                                $u->where('action', 'LIKE', '%user%')
+                                    ->orWhere('action', 'LIKE', '%role%')
+                                    ->orWhere('action', 'LIKE', '%login%')
+                                    ->orWhere('action', 'LIKE', '%logout%');
+                            });
+                        } elseif ($moduleLower === 'settings' || $moduleLower === 'setting') {
+                            $sub->where('action', 'LIKE', '%setting%');
+                        } elseif ($moduleLower === 'payment') {
+                            $sub->where('action', 'LIKE', '%payment%');
+                        }
+                    });
+            });
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'ILIKE', "%{$search}%")
+                    ->orWhere('action', 'ILIKE', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'ILIKE', "%{$search}%")
+                            ->orWhere('email', 'ILIKE', "%{$search}%")
+                            ->orWhere('username', 'ILIKE', "%{$search}%");
+                    });
+            });
+        }
+
         if ($startDate) {
             $query->where('created_at', '>=', Carbon::parse($startDate)->startOfDay());
         }
@@ -251,5 +298,43 @@ class AuditLogService
         }
 
         return $query->paginate($perPage);
+    }
+
+    /**
+     * Get single log detail with relations.
+     */
+    public function getLogById(int $id): ?AuditLog
+    {
+        return AuditLog::with(['user', 'outlet', 'auditable'])->find($id);
+    }
+
+    /**
+     * Get summary metrics for audit logs.
+     */
+    public function getSummary(int $outletId): array
+    {
+        $baseQuery = AuditLog::where(function ($q) use ($outletId) {
+            $q->where('outlet_id', $outletId)
+                ->orWhereNull('outlet_id');
+        });
+
+        $totalLogs = (clone $baseQuery)->count();
+        $todayLogs = (clone $baseQuery)->whereDate('created_at', Carbon::today())->count();
+        $uniqueUsers = (clone $baseQuery)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
+
+        $recentBreakdown = (clone $baseQuery)
+            ->selectRaw('action, COUNT(*) as count')
+            ->groupBy('action')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->pluck('count', 'action')
+            ->toArray();
+
+        return [
+            'total_logs' => $totalLogs,
+            'today_logs' => $todayLogs,
+            'unique_users' => $uniqueUsers,
+            'top_actions' => $recentBreakdown,
+        ];
     }
 }

@@ -29,6 +29,7 @@ class User extends Authenticatable
         'email',
         'username',
         'password',
+        'pin',
         'pin_hash',
         'status',
     ];
@@ -55,6 +56,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function setPinAttribute($value): void
+    {
+        if ($value !== null && $value !== '') {
+            $this->attributes['pin_hash'] = \Illuminate\Support\Facades\Hash::make($value);
+        }
     }
 
     public function restaurant(): BelongsTo

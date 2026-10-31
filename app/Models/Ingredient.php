@@ -54,4 +54,9 @@ class Ingredient extends Model
     {
         return $this->hasMany(InventoryBatch::class);
     }
+
+    public function wasteRecords(): HasMany
+    {
+        return $this->hasMany(WasteRecord::class);
+    }
 }
