@@ -9,6 +9,8 @@ import {
     Users,
     Settings,
     ClipboardList,
+    ChefHat,
+    Building2,
     Shield,
     ShieldCheck,
     Trash2,
@@ -64,10 +66,22 @@ const navigation = [
         permission: 'inventory.view',
     },
     {
+        name: 'Recipes',
+        href: '/recipes',
+        icon: ChefHat,
+        permission: 'recipe.view',
+    },
+    {
         name: 'Waste Management',
         href: '/waste',
         icon: Trash2,
         permission: 'inventory.manage',
+    },
+    {
+        name: 'Outlets',
+        href: '/outlets',
+        icon: Building2,
+        permission: 'outlet.view',
     },
     {
         name: 'Employees',

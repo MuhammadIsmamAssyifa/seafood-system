@@ -60,6 +60,18 @@ class PermissionSeeder extends Seeder
             'audit.view',
             'settings.view',
             'settings.update',
+
+            // Recipe Management (Sprint 13)
+            'recipe.view',
+            'recipe.create',
+            'recipe.update',
+            'recipe.delete',
+
+            // Outlet Management (Sprint 14)
+            'outlet.view',
+            'outlet.create',
+            'outlet.update',
+            'outlet.delete',
         ];
 
         foreach ($permissions as $permission) {
@@ -111,6 +123,12 @@ class PermissionSeeder extends Seeder
             'audit.view',
             'settings.view',
             'settings.update',
+            'recipe.view',
+            'recipe.create',
+            'recipe.update',
+            'recipe.delete',
+            'outlet.view',
+            'outlet.update',
         ];
         $admin?->syncPermissions($adminPermissions);
 

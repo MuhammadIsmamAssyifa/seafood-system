@@ -11,10 +11,12 @@ import {
     ShieldCheck,
     Store,
     Calendar,
+    Search,
 } from 'lucide-vue-next';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUserStore } from '../../stores/user.store';
 import { formatDate } from '../../utils/formatter';
+import GlobalSearchModal from '../search/GlobalSearchModal.vue';
 
 const emit = defineEmits(['toggle-sidebar']);
 
@@ -23,6 +25,7 @@ const authStore = useAuthStore();
 const userStore = useUserStore();
 
 const isProfileOpen = ref(false);
+const isSearchOpen = ref(false);
 const profileRef = ref(null);
 const currentDate = ref(formatDate(new Date(), 'dddd, DD MMMM YYYY'));
 
@@ -32,12 +35,21 @@ function handleClickOutside(e) {
     }
 }
 
+function handleGlobalKeydown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        isSearchOpen.value = !isSearchOpen.value;
+    }
+}
+
 onMounted(() => {
     window.addEventListener('click', handleClickOutside);
+    window.addEventListener('keydown', handleGlobalKeydown);
 });
 
 onUnmounted(() => {
     window.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('keydown', handleGlobalKeydown);
 });
 
 async function handleLogout() {
@@ -54,7 +66,7 @@ async function handleLogout() {
             <button
                 type="button"
                 @click="emit('toggle-sidebar')"
-                class="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                class="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             >
                 <Menu class="w-5 h-5" />
             </button>
@@ -72,8 +84,20 @@ async function handleLogout() {
             </div>
         </div>
 
-        <!-- Right: KDS Switcher & User Profile Menu -->
-        <div class="flex items-center gap-3">
+        <!-- Center / Right: Global Search, Kitchen Switcher & User Profile Menu -->
+        <div class="flex items-center gap-2.5 sm:gap-3">
+            <!-- Global Search Button -->
+            <button
+                type="button"
+                @click="isSearchOpen = true"
+                class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition-colors text-xs font-medium cursor-pointer"
+                title="Pencarian Global (Ctrl + K)"
+            >
+                <Search class="w-4 h-4 text-slate-400" />
+                <span class="hidden md:inline">Cari apa saja...</span>
+                <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] bg-white border border-slate-200 rounded text-slate-500 font-mono shadow-2xs">Ctrl K</kbd>
+            </button>
+
             <!-- Kitchen App Shortcut -->
             <a
                 href="/kitchen"
@@ -161,6 +185,8 @@ async function handleLogout() {
                 </Transition>
             </div>
         </div>
+
+        <!-- Global Search Modal -->
+        <GlobalSearchModal v-model="isSearchOpen" />
     </header>
 </template>
-

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\GlobalSearchController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\KitchenActionController;
 use App\Http\Controllers\Api\KitchenController;
@@ -11,9 +12,11 @@ use App\Http\Controllers\Api\OrderBatchController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderItemChangeController;
 use App\Http\Controllers\Api\OrderItemController;
+use App\Http\Controllers\Api\OutletController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\ProfitReportController;
+use App\Http\Controllers\Api\RecipeController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RestaurantController;
 use App\Http\Controllers\Api\RolePermissionController;
@@ -50,6 +53,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         ->middleware('permission:dashboard.view');
     Route::get('/dashboard/overview', [DashboardController::class, 'summary'])
         ->middleware('permission:dashboard.view');
+
+    // Global Search (Sprint 15)
+    Route::get('/search', [GlobalSearchController::class, 'search']);
 
     // Inventory & Batch Cost
     Route::prefix('inventory')->middleware('permission:inventory.view|inventory.manage')->group(function () {
@@ -212,5 +218,39 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
             ->middleware('permission:settings.view|user.manage');
         Route::put('/', [SettingController::class, 'update'])
             ->middleware('permission:settings.update|user.manage');
+    });
+
+    // Recipe Management (Sprint 13)
+    Route::prefix('recipes')->group(function () {
+        Route::get('/options', [RecipeController::class, 'options'])
+            ->middleware('permission:recipe.view|menu.view');
+        Route::get('/', [RecipeController::class, 'index'])
+            ->middleware('permission:recipe.view');
+        Route::post('/', [RecipeController::class, 'store'])
+            ->middleware('permission:recipe.create');
+        Route::get('/{id}', [RecipeController::class, 'show'])
+            ->middleware('permission:recipe.view');
+        Route::put('/{id}', [RecipeController::class, 'update'])
+            ->middleware('permission:recipe.update');
+        Route::delete('/{id}', [RecipeController::class, 'destroy'])
+            ->middleware('permission:recipe.delete');
+        Route::get('/{id}/calculate', [RecipeController::class, 'calculate'])
+            ->middleware('permission:recipe.view');
+    });
+
+    // Outlet Management (Sprint 14)
+    Route::prefix('outlets')->group(function () {
+        Route::get('/', [OutletController::class, 'index'])
+            ->middleware('permission:outlet.view|user.view');
+        Route::post('/', [OutletController::class, 'store'])
+            ->middleware('permission:outlet.create');
+        Route::get('/{id}', [OutletController::class, 'show'])
+            ->middleware('permission:outlet.view');
+        Route::put('/{id}', [OutletController::class, 'update'])
+            ->middleware('permission:outlet.update');
+        Route::delete('/{id}', [OutletController::class, 'destroy'])
+            ->middleware('permission:outlet.delete');
+        Route::post('/{id}/assign-users', [OutletController::class, 'assignUsers'])
+            ->middleware('permission:outlet.update|user.manage');
     });
 });

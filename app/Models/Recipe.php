@@ -13,6 +13,9 @@ class Recipe extends Model
 
     protected $fillable = [
         'menu_variant_id',
+        'name',
+        'description',
+        'created_by',
     ];
 
     /*
@@ -29,5 +32,10 @@ class Recipe extends Model
     public function items(): HasMany
     {
         return $this->hasMany(RecipeItem::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

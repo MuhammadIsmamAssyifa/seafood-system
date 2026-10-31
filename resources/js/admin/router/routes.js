@@ -189,6 +189,50 @@ export const routes = [
         },
     },
     {
+        path: '/recipes',
+        name: 'recipes',
+        component: () => import('../pages/recipe/RecipePage.vue'),
+        meta: {
+            layout: 'default',
+            requiresAuth: true,
+            permission: 'recipe.view',
+            title: 'Recipe & Food Cost',
+        },
+    },
+    {
+        path: '/recipes/:id',
+        name: 'recipe-detail',
+        component: () => import('../pages/recipe/RecipeDetailPage.vue'),
+        meta: {
+            layout: 'default',
+            requiresAuth: true,
+            permission: 'recipe.view',
+            title: 'Rincian Resep & Biaya Bahan',
+        },
+    },
+    {
+        path: '/outlets',
+        name: 'outlets',
+        component: () => import('../pages/outlets/OutletPage.vue'),
+        meta: {
+            layout: 'default',
+            requiresAuth: true,
+            permission: 'outlet.view',
+            title: 'Manajemen Cabang (Outlets)',
+        },
+    },
+    {
+        path: '/outlets/:id',
+        name: 'outlet-detail',
+        component: () => import('../pages/outlets/OutletDetailPage.vue'),
+        meta: {
+            layout: 'default',
+            requiresAuth: true,
+            permission: 'outlet.view',
+            title: 'Rincian Cabang',
+        },
+    },
+    {
         path: '/:pathMatch(.*)*',
         redirect: '/dashboard',
     },
